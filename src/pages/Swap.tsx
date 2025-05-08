@@ -16,6 +16,9 @@ import CryptoIcon from "@/components/CryptoIcon";
 import AddressDisplay from "@/components/AddressDisplay";
 import GuaranteeLetter from "@/components/GuaranteeLetter";
 import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Link } from "react-router-dom";
+import { AlertCircle, ArrowRight, X } from "lucide-react";
 
 const swapFormSchema = z.object({
   fromCurrency: z.string().min(1, "Please select a currency"),
@@ -34,6 +37,8 @@ const Swap = () => {
   const [depositAddress, setDepositAddress] = useState("");
   const [orderId, setOrderId] = useState("");
   const [privateKey, setPrivateKey] = useState("");
+  const [showSameCurrencyAlert, setShowSameCurrencyAlert] = useState(false);
+  const [processingSubmit, setProcessingSubmit] = useState(false);
 
   const form = useForm<SwapFormValues>({
     resolver: zodResolver(swapFormSchema),
@@ -54,6 +59,9 @@ const Swap = () => {
     if (watchFromCurrency && watchToCurrency) {
       const rate = getExchangeRate(watchFromCurrency, watchToCurrency);
       setExchangeRate(rate);
+      
+      // Show alert if same currency is selected
+      setShowSameCurrencyAlert(watchFromCurrency === watchToCurrency);
     }
   }, [watchFromCurrency, watchToCurrency]);
 
@@ -82,16 +90,22 @@ const Swap = () => {
       return;
     }
 
-    // Generate order data
-    const newOrderId = generateOrderId();
-    const newPrivateKey = generatePrivateKey();
-    const generatedDepositAddress = getRandomAddress(data.fromCurrency);
-    
-    // Save data
-    setOrderId(newOrderId);
-    setPrivateKey(newPrivateKey);
-    setDepositAddress(generatedDepositAddress);
-    setShowConfirmation(true);
+    setProcessingSubmit(true);
+
+    // Simulate processing time with a delay
+    setTimeout(() => {
+      // Generate order data
+      const newOrderId = generateOrderId();
+      const newPrivateKey = generatePrivateKey();
+      const generatedDepositAddress = getRandomAddress(data.fromCurrency);
+      
+      // Save data
+      setOrderId(newOrderId);
+      setPrivateKey(newPrivateKey);
+      setDepositAddress(generatedDepositAddress);
+      setShowConfirmation(true);
+      setProcessingSubmit(false);
+    }, 1500);
   };
 
   return (
@@ -102,6 +116,43 @@ const Swap = () => {
       {!showConfirmation ? (
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {showSameCurrencyAlert && (
+              <Alert className="bg-amber-500/15 border-amber-500/30 text-amber-700 dark:text-amber-400">
+                <div className="flex items-start justify-between w-full">
+                  <div className="flex gap-3">
+                    <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5" />
+                    <div>
+                      <AlertTitle className="mb-1">Same currency selected</AlertTitle>
+                      <AlertDescription className="text-sm">
+                        For better security and potentially lower fees, consider using our Mixer service instead.
+                      </AlertDescription>
+                      <div className="mt-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="bg-amber-500/10 border-amber-500/30 text-amber-600 hover:bg-amber-500/20"
+                          asChild
+                        >
+                          <Link to="/mixer" className="flex items-center gap-1">
+                            Go to Mixer <ArrowRight className="h-3 w-3 ml-1" />
+                          </Link>
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6" 
+                    onClick={() => setShowSameCurrencyAlert(false)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </Alert>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* From Currency */}
               <FormField
@@ -265,7 +316,9 @@ const Swap = () => {
             )}
 
             <div className="flex justify-end">
-              <Button type="submit">Continue to Swap</Button>
+              <Button type="submit" disabled={processingSubmit}>
+                {processingSubmit ? "Processing..." : "Continue to Swap"}
+              </Button>
             </div>
           </form>
         </Form>

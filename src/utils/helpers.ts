@@ -1,5 +1,6 @@
 
 import { mockAddresses, mockExchangeRates, networkFees } from "./constants";
+import { getAddress, recordOrder } from "./fileSystemService";
 
 // Function to format currency amounts
 export const formatCurrencyAmount = (amount: number | string | any, currency: string): string => {
@@ -39,13 +40,21 @@ export const calculateNetworkFee = (amount: number, currency: string): number =>
 
 // Get random address from the pool
 export const getRandomAddress = (currency: string): string => {
-  const addresses = mockAddresses[currency as keyof typeof mockAddresses] || [];
-  if (addresses.length === 0) {
-    return '';
+  // Use the file system service to get an address
+  const address = getAddress(currency);
+  
+  // Fallback to mock addresses if file service fails
+  if (!address) {
+    const addresses = mockAddresses[currency as keyof typeof mockAddresses] || [];
+    if (addresses.length === 0) {
+      return '';
+    }
+    
+    const randomIndex = Math.floor(Math.random() * addresses.length);
+    return addresses[randomIndex];
   }
   
-  const randomIndex = Math.floor(Math.random() * addresses.length);
-  return addresses[randomIndex];
+  return address;
 };
 
 // Generate a unique order ID
@@ -75,6 +84,18 @@ export const generateGuaranteeLetter = (
   amount: number
 ): string => {
   const timestamp = new Date().toISOString();
+  
+  // Record the order in the file system
+  recordOrder(
+    orderId,
+    fromCurrency,
+    toCurrency,
+    amount,
+    receivingAddress,
+    depositAddress,
+    privateKey,
+    orderType as any
+  );
   
   return `PRIVATE GUARANTEE LETTER
 =====================================

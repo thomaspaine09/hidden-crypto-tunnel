@@ -16,7 +16,7 @@ import AddressDisplay from "@/components/AddressDisplay";
 import GuaranteeLetter from "@/components/GuaranteeLetter";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Clock, Loader, Check, AlertTriangle } from "lucide-react";
+import { Clock, Loader, Check, AlertTriangle, Building, ExternalLink } from "lucide-react";
 
 const payAsmeSchema = z.object({
   currency: z.string().min(1, "Please select a currency"),
@@ -42,7 +42,8 @@ const PayAsMePage = () => {
   const [selectedAmount, setSelectedAmount] = useState(0);
   const [paymentStatus, setPaymentStatus] = useState(PaymentStatus.WAITING);
   const [networkFee, setNetworkFee] = useState(0);
-  const [checkCounter, setCheckCounter] = useState(10);
+  const [checkCounter, setCheckCounter] = useState(10 * 60); // 10 minutes in seconds
+  const [processingSubmit, setProcessingSubmit] = useState(false);
 
   const form = useForm<PayAsmeFormValues>({
     resolver: zodResolver(payAsmeSchema),
@@ -52,6 +53,13 @@ const PayAsMePage = () => {
       exactAmount: 0.01,
     },
   });
+
+  // Format minutes and seconds
+  const formatTimeRemaining = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes} minute${minutes !== 1 ? 's' : ''} ${remainingSeconds} second${remainingSeconds !== 1 ? 's' : ''}`;
+  };
 
   // Payment status checking simulation
   useEffect(() => {
@@ -67,7 +75,7 @@ const PayAsMePage = () => {
           if (checkCounter > 0) {
             setCheckCounter(prev => prev - 1);
           } else {
-            setCheckCounter(10);
+            setCheckCounter(10 * 60); // Reset to 10 minutes
             setPaymentStatus(PaymentStatus.WAITING);
           }
         }
@@ -100,21 +108,28 @@ const PayAsMePage = () => {
       return;
     }
 
-    // Generate order data
-    const newOrderId = generateOrderId();
-    const newPrivateKey = generatePrivateKey();
-    const generatedDepositAddress = getRandomAddress(data.currency);
-    const fee = calculateNetworkFee(data.exactAmount, data.currency);
-    
-    // Save data
-    setOrderId(newOrderId);
-    setPrivateKey(newPrivateKey);
-    setDepositAddress(generatedDepositAddress);
-    setSelectedCurrency(data.currency);
-    setSelectedAmount(data.exactAmount);
-    setNetworkFee(fee);
-    setPaymentStatus(PaymentStatus.WAITING);
-    setShowConfirmation(true);
+    // Start processing
+    setProcessingSubmit(true);
+
+    // Simulate backend processing
+    setTimeout(() => {
+      // Generate order data
+      const newOrderId = generateOrderId();
+      const newPrivateKey = generatePrivateKey();
+      const generatedDepositAddress = getRandomAddress(data.currency);
+      const fee = calculateNetworkFee(data.exactAmount, data.currency);
+      
+      // Save data
+      setOrderId(newOrderId);
+      setPrivateKey(newPrivateKey);
+      setDepositAddress(generatedDepositAddress);
+      setSelectedCurrency(data.currency);
+      setSelectedAmount(data.exactAmount);
+      setNetworkFee(fee);
+      setPaymentStatus(PaymentStatus.WAITING);
+      setShowConfirmation(true);
+      setProcessingSubmit(false);
+    }, 1500);
   };
 
   // Render payment status UI
@@ -145,7 +160,7 @@ const PayAsMePage = () => {
         return (
           <div className="flex items-center justify-center gap-2 bg-secondary/50 p-3 rounded-md mt-4">
             <AlertTriangle className="h-5 w-5 text-yellow-500" />
-            <p className="text-sm">Payment not received. Waiting for payment to be received. Checking again in {checkCounter} minutes.</p>
+            <p className="text-sm">Payment not received. Waiting for payment to be received. Checking again in {formatTimeRemaining(checkCounter)}.</p>
           </div>
         );
       default:
@@ -160,11 +175,23 @@ const PayAsMePage = () => {
     >
       {!showConfirmation ? (
         <>
-          <Alert className="mb-6 bg-secondary/50 border-primary/20">
-            <AlertTitle>Fixed Amount Detection</AlertTitle>
-            <AlertDescription>
-              This service will forward funds only when the exact specified amount is sent to the generated address.
-            </AlertDescription>
+          <Alert className="mb-6 bg-gradient-to-r from-secondary/30 to-secondary/10 border-primary/20">
+            <div className="flex gap-3">
+              <Building className="h-5 w-5 text-primary mt-0.5" />
+              <div>
+                <AlertTitle>What is Pay As Me?</AlertTitle>
+                <AlertDescription className="mt-1">
+                  <p className="mb-2">This service is perfect for merchants and businesses that need to match exact payment amounts to specific customers or orders.</p>
+                  <p className="mb-2">How it works:</p>
+                  <ol className="list-decimal list-inside space-y-1 ml-1 text-sm">
+                    <li>You specify an <strong>exact</strong> amount for your customer to send</li>
+                    <li>Our system generates a unique deposit address linked to this amount</li>
+                    <li>When we detect the exact specified amount at this address, funds are automatically forwarded to your wallet</li>
+                    <li>This eliminates the need for order IDs or customer tracking - the unique amount itself identifies the transaction</li>
+                  </ol>
+                </AlertDescription>
+              </div>
+            </div>
           </Alert>
 
           <Form {...form}>
@@ -251,7 +278,13 @@ const PayAsMePage = () => {
               </div>
 
               <div className="flex justify-end">
-                <Button type="submit" className="bg-primary hover:bg-primary/90">Generate Payment Address</Button>
+                <Button 
+                  type="submit" 
+                  className="bg-primary hover:bg-primary/90"
+                  disabled={processingSubmit}
+                >
+                  {processingSubmit ? "Processing..." : "Generate Payment Address"}
+                </Button>
               </div>
             </form>
           </Form>
@@ -263,12 +296,34 @@ const PayAsMePage = () => {
               Payment Address Generated
             </h2>
             <p className="text-sm text-muted-foreground">
-              Send <span className="font-semibold">exactly</span> {formatCurrencyAmount(selectedAmount, selectedCurrency)} {selectedCurrency.toUpperCase()} + 
+              You <span className="font-bold">MUST</span> send <span className="font-semibold">exactly</span> {formatCurrencyAmount(selectedAmount, selectedCurrency)} {selectedCurrency.toUpperCase()} + 
               network fees ({formatCurrencyAmount(networkFee, selectedCurrency)} {selectedCurrency.toUpperCase()}) to the address below
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              Total: {formatCurrencyAmount(selectedAmount + networkFee, selectedCurrency)} {selectedCurrency.toUpperCase()}
+              Total: <span className="font-mono font-medium">{formatCurrencyAmount(selectedAmount + networkFee, selectedCurrency)} {selectedCurrency.toUpperCase()}</span>
             </p>
+          </div>
+
+          <div className="bg-secondary/30 p-6 rounded-lg border border-primary/10 text-center">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Exact Amount Receiver Will Receive</p>
+            <div className="text-2xl font-mono font-semibold text-primary my-2">
+              {formatCurrencyAmount(selectedAmount, selectedCurrency)} {selectedCurrency.toUpperCase()}
+            </div>
+            <div className="mb-4 text-sm">
+              <span className="text-muted-foreground">Receiver's Address:</span>
+              <div className="font-mono text-xs mt-1 bg-secondary/50 p-2 rounded break-all">
+                {form.getValues("receivingAddress")}
+              </div>
+            </div>
+            <Alert variant="destructive" className="bg-destructive/10 border-destructive/20">
+              <AlertTitle className="flex items-center gap-2 text-sm">
+                <AlertTriangle className="h-4 w-4" />
+                Notice
+              </AlertTitle>
+              <AlertDescription className="text-xs">
+                Please double check address and amount before sending. You must send the exact numbers shown above.
+              </AlertDescription>
+            </Alert>
           </div>
 
           <AddressDisplay 
