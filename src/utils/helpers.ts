@@ -2,13 +2,23 @@
 import { mockAddresses, mockExchangeRates, networkFees } from "./constants";
 
 // Function to format currency amounts
-export const formatCurrencyAmount = (amount: number, currency: string): string => {
+export const formatCurrencyAmount = (amount: number | string | any, currency: string): string => {
+  // Ensure amount is a number
+  const numericAmount = typeof amount === 'number' ? 
+    amount : 
+    (typeof amount === 'string' ? parseFloat(amount) : 0);
+  
+  // Check if numericAmount is a valid number
+  if (isNaN(numericAmount)) {
+    return '0';
+  }
+  
   if (currency === 'btc') {
-    return amount.toFixed(8);
+    return numericAmount.toFixed(8);
   } else if (currency === 'eth' || currency === 'xmr') {
-    return amount.toFixed(6);
+    return numericAmount.toFixed(6);
   } else {
-    return amount.toFixed(2);
+    return numericAmount.toFixed(2);
   }
 };
 
