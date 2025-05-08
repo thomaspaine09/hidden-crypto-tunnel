@@ -175,25 +175,6 @@ const PayAsMePage = () => {
     >
       {!showConfirmation ? (
         <>
-          <Alert className="mb-6 bg-gradient-to-r from-secondary/30 to-secondary/10 border-primary/20">
-            <div className="flex gap-3">
-              <Building className="h-5 w-5 text-primary mt-0.5" />
-              <div>
-                <AlertTitle>What is Pay As Me?</AlertTitle>
-                <AlertDescription className="mt-1">
-                  <p className="mb-2">This service is perfect for merchants and businesses that need to match exact payment amounts to specific customers or orders.</p>
-                  <p className="mb-2">How it works:</p>
-                  <ol className="list-decimal list-inside space-y-1 ml-1 text-sm">
-                    <li>You specify an <strong>exact</strong> amount for your customer to send</li>
-                    <li>Our system generates a unique deposit address linked to this amount</li>
-                    <li>When we detect the exact specified amount at this address, funds are automatically forwarded to your wallet</li>
-                    <li>This eliminates the need for order IDs or customer tracking - the unique amount itself identifies the transaction</li>
-                  </ol>
-                </AlertDescription>
-              </div>
-            </div>
-          </Alert>
-
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -288,6 +269,47 @@ const PayAsMePage = () => {
               </div>
             </form>
           </Form>
+          
+          {/* Moved the explanation/info alert to after the form */}
+          <div className="mt-10">
+            <Alert className="bg-primary/10 border border-primary/20 shadow-lg">
+              <div className="flex gap-3">
+                <Building className="h-5 w-5 text-primary mt-0.5" />
+                <div>
+                  <AlertTitle className="text-lg font-semibold text-primary">What is Pay As Me?</AlertTitle>
+                  <AlertDescription className="mt-2">
+                    <p className="mb-2 text-foreground/90">This service creates a unique payment detection system based on exact payment amounts.</p>
+                    <div className="space-y-2 mt-4">
+                      <div className="flex items-start gap-2">
+                        <div className="bg-primary/20 p-1 rounded-full">
+                          <Check className="h-4 w-4 text-primary" />
+                        </div>
+                        <p className="text-sm">Specify an <strong>exact</strong> amount for your customer to send</p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="bg-primary/20 p-1 rounded-full">
+                          <Check className="h-4 w-4 text-primary" />
+                        </div>
+                        <p className="text-sm">Our system generates a unique deposit address for this specific amount</p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="bg-primary/20 p-1 rounded-full">
+                          <Check className="h-4 w-4 text-primary" />
+                        </div>
+                        <p className="text-sm">When the exact amount is received, funds are automatically forwarded to you</p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="bg-primary/20 p-1 rounded-full">
+                          <Check className="h-4 w-4 text-primary" />
+                        </div>
+                        <p className="text-sm">Perfect for merchants who need to match payments to specific orders</p>
+                      </div>
+                    </div>
+                  </AlertDescription>
+                </div>
+              </div>
+            </Alert>
+          </div>
         </>
       ) : (
         <div className="space-y-6">
@@ -305,7 +327,7 @@ const PayAsMePage = () => {
           </div>
 
           <div className="bg-secondary/30 p-6 rounded-lg border border-primary/10 text-center">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Exact Amount Receiver Will Receive</p>
+            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">EXACT AMOUNT RECEIVER WILL RECEIVE</p>
             <div className="text-2xl font-mono font-semibold text-primary my-2">
               {formatCurrencyAmount(selectedAmount, selectedCurrency)} {selectedCurrency.toUpperCase()}
             </div>
@@ -315,12 +337,12 @@ const PayAsMePage = () => {
                 {form.getValues("receivingAddress")}
               </div>
             </div>
-            <Alert variant="destructive" className="bg-destructive/10 border-destructive/20">
-              <AlertTitle className="flex items-center gap-2 text-sm">
+            <Alert className="bg-primary/5 border-primary/20">
+              <AlertTitle className="flex items-center gap-2 text-sm text-primary">
                 <AlertTriangle className="h-4 w-4" />
                 Notice
               </AlertTitle>
-              <AlertDescription className="text-xs">
+              <AlertDescription className="text-xs text-foreground/90">
                 Please double check address and amount before sending. You must send the exact numbers shown above.
               </AlertDescription>
             </Alert>

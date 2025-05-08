@@ -17,11 +17,13 @@ const ServiceLayout = ({ title, description, children }: ServiceLayoutProps) => 
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-primary/10 rounded-full filter blur-3xl -z-10" />
       <div className="absolute top-40 right-20 w-32 h-32 bg-primary/5 rounded-full filter blur-xl -z-10" />
       
-      {/* Matrix rain-like effect (decorative numbers) */}
-      <div className="absolute inset-0 overflow-hidden -z-20 opacity-5 select-none pointer-events-none">
+      {/* Enhanced Matrix rain-like effect */}
+      <div className="absolute inset-0 overflow-hidden -z-20 opacity-10 select-none pointer-events-none">
         <div className="matrix-code-1">01010110110101010010101010010101010101</div>
         <div className="matrix-code-2">10110101011010101001010110101011010101</div>
         <div className="matrix-code-3">01101010010101010010101101010010101010</div>
+        <div className="matrix-code-4">10101010010101011010100101010101010101</div>
+        <div className="matrix-code-5">01101010100101010010101010010101010101</div>
       </div>
       
       <div className="relative z-10">
