@@ -14,17 +14,29 @@ interface AddressDisplayProps {
 
 const AddressDisplay = ({ address, currency, orderId, note }: AddressDisplayProps) => {
   const [countdown, setCountdown] = useState(30);
+  const [minutes, setMinutes] = useState(2);
+  const [seconds, setSeconds] = useState(0);
 
   useEffect(() => {
     if (!orderId) return;
     
+    // Set initial values
+    setMinutes(2);
+    setSeconds(59);
+    
     const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          return 0;
+      setSeconds((prevSeconds) => {
+        if (prevSeconds <= 0) {
+          setMinutes((prevMinutes) => {
+            if (prevMinutes <= 0) {
+              clearInterval(timer);
+              return 0;
+            }
+            return prevMinutes - 1;
+          });
+          return 59;
         }
-        return prev - 1;
+        return prevSeconds - 1;
       });
     }, 1000);
 
@@ -70,9 +82,9 @@ const AddressDisplay = ({ address, currency, orderId, note }: AddressDisplayProp
           <p className="text-xs text-muted-foreground mt-3">{note}</p>
         )}
 
-        {orderId && countdown > 0 && (
+        {orderId && (minutes > 0 || seconds > 0) && (
           <div className="mt-3 text-xs text-center text-muted-foreground">
-            Checking for transaction... ({countdown}s)
+            Payment not received. Waiting for payment to be received. Checking again in {minutes} minute{minutes !== 1 ? 's' : ''} {seconds} second{seconds !== 1 ? 's' : ''}
           </div>
         )}
       </CardContent>
