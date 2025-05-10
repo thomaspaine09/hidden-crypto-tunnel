@@ -1,8 +1,9 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import CryptoIcon from "@/components/CryptoIcon";
-import { ArrowRight, Lock, Shield, User, Code, Key, Clock, CreditCard, Zap, AlertCircle } from "lucide-react";
+import { ArrowRight, Shield, User, Code, Key, Clock, CreditCard, Zap, AlertCircle, Lock } from "lucide-react";
 
 const Index = () => {
   return (
@@ -63,7 +64,7 @@ const Index = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <FeatureCard 
-                icon={<Lock className="h-8 w-8 mb-2 text-primary" />}
+                icon={<div className="text-center"><Lock className="h-8 w-8 mb-2 text-primary" /></div>}
                 title="100% Private" 
                 description="No accounts, no KYC, no personal information required. We don't track your activity or store any identifiable data."
               />
