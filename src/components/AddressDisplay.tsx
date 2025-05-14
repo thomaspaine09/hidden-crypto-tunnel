@@ -64,12 +64,12 @@ const AddressDisplay = ({
     );
   };
 
-  const formatAmount = (amount?: number): string => {
+  const formatAmount = (amount?: number, currencyType: string = currency): string => {
     if (amount === undefined) return '';
     
-    if (currency === 'btc') {
+    if (currencyType === 'btc') {
       return amount.toFixed(8);
-    } else if (currency === 'eth' || currency === 'xmr') {
+    } else if (currencyType === 'eth' || currencyType === 'xmr') {
       return amount.toFixed(6);
     } else {
       return amount.toFixed(2);

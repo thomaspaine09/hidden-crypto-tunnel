@@ -118,11 +118,11 @@ IMPORTANT:
 =====================================`;
 };
 
-// Simple address validation (just for demo)
+// Improved address validation for different cryptocurrencies
 export const isValidAddress = (address: string, currency: string): boolean => {
-  // In a real app, we would use proper validation for each currency
   if (!address) return false;
   
+  // Basic length checks
   const minLength = {
     btc: 26,
     eth: 42,
@@ -130,7 +130,31 @@ export const isValidAddress = (address: string, currency: string): boolean => {
     xmr: 95
   };
   
-  return address.length >= (minLength[currency as keyof typeof minLength] || 20);
+  if (address.length < (minLength[currency as keyof typeof minLength] || 20)) {
+    return false;
+  }
+  
+  // More specific validations per currency
+  switch(currency) {
+    case 'btc':
+      // Bitcoin addresses start with 1, 3, or bc1
+      return /^(1|3|bc1)[a-zA-Z0-9]{25,90}$/.test(address);
+    
+    case 'eth':
+      // Ethereum addresses are 42 chars including 0x prefix
+      return /^0x[a-fA-F0-9]{40}$/.test(address);
+    
+    case 'usdt':
+      // USDT addresses can be Ethereum-based (0x...) or Tron-based (T...)
+      return /^(0x[a-fA-F0-9]{40}|T[a-zA-Z0-9]{33})$/.test(address);
+    
+    case 'xmr':
+      // Monero addresses are very long
+      return /^[4|8][a-zA-Z0-9]{94,}$/.test(address);
+      
+    default:
+      return address.length >= 20; // Fallback for unknown currencies
+  }
 };
 
 // Calculate final amount after fees
