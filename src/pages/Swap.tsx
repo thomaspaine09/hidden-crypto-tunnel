@@ -15,7 +15,7 @@ import InfoTooltip from "@/components/InfoTooltip";
 import CryptoIcon from "@/components/CryptoIcon";
 import AddressDisplay from "@/components/AddressDisplay";
 import GuaranteeLetter from "@/components/GuaranteeLetter";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Link } from "react-router-dom";
 import { AlertCircle, ArrowRight, X } from "lucide-react";
@@ -65,6 +65,7 @@ const Swap = () => {
       // Show alert if same currency is selected
       if (watchFromCurrency === watchToCurrency) {
         setShowSameCurrencyAlert(true);
+        // Display toast notification for same currency selection
         toast({
           title: "Same currency selected",
           description: "For better security and potentially lower fees, consider using our Mixer service instead.",
@@ -113,6 +114,16 @@ const Swap = () => {
         variant: "destructive",
       });
       return;
+    }
+
+    // Show error if the same currency is selected
+    if (data.fromCurrency === data.toCurrency) {
+      toast({
+        title: "Same currency selected",
+        description: "You're trying to swap the same currency. Consider using our Mixer service for better privacy.",
+        variant: "destructive",
+      });
+      // Continue processing but with a warning
     }
 
     setProcessingSubmit(true);
@@ -390,6 +401,8 @@ const Swap = () => {
             currency={watchFromCurrency}
             orderId={orderId}
             note="Please send exactly the amount specified to avoid transaction issues."
+            exactAmount={watchAmount}
+            networkFee={networkFee}
           />
 
           <div className="py-4">
