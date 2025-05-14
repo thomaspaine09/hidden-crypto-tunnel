@@ -14,7 +14,7 @@ import InfoTooltip from "@/components/InfoTooltip";
 import CryptoIcon from "@/components/CryptoIcon";
 import AddressDisplay from "@/components/AddressDisplay";
 import GuaranteeLetter from "@/components/GuaranteeLetter";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Clock, Loader, Check, AlertTriangle, Building, ExternalLink } from "lucide-react";
 
@@ -44,6 +44,7 @@ const PayAsMePage = () => {
   const [networkFee, setNetworkFee] = useState(0);
   const [checkCounter, setCheckCounter] = useState(10 * 60); // 10 minutes in seconds
   const [processingSubmit, setProcessingSubmit] = useState(false);
+  const [addressValid, setAddressValid] = useState(false);
 
   const form = useForm<PayAsmeFormValues>({
     resolver: zodResolver(payAsmeSchema),
@@ -54,12 +55,24 @@ const PayAsMePage = () => {
     },
   });
 
+  const watchCurrency = form.watch("currency");
+  const watchReceivingAddress = form.watch("receivingAddress");
+
   // Format minutes and seconds
   const formatTimeRemaining = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes} minute${minutes !== 1 ? 's' : ''} ${remainingSeconds} second${remainingSeconds !== 1 ? 's' : ''}`;
   };
+
+  // Validate receiving address
+  useEffect(() => {
+    if (watchReceivingAddress && watchCurrency) {
+      setAddressValid(isValidAddress(watchReceivingAddress, watchCurrency));
+    } else {
+      setAddressValid(false);
+    }
+  }, [watchReceivingAddress, watchCurrency]);
 
   // Payment status checking simulation
   useEffect(() => {
@@ -104,7 +117,11 @@ const PayAsMePage = () => {
 
   const onSubmit = (data: PayAsmeFormValues) => {
     if (!isValidAddress(data.receivingAddress, data.currency)) {
-      toast.error(`Invalid ${data.currency.toUpperCase()} address format`);
+      toast({
+        title: "Invalid address",
+        description: `Invalid ${data.currency.toUpperCase()} address format. Please check and try again.`,
+        variant: "destructive",
+      });
       return;
     }
 
@@ -113,22 +130,42 @@ const PayAsMePage = () => {
 
     // Simulate backend processing
     setTimeout(() => {
-      // Generate order data
-      const newOrderId = generateOrderId();
-      const newPrivateKey = generatePrivateKey();
-      const generatedDepositAddress = getRandomAddress(data.currency);
-      const fee = calculateNetworkFee(data.exactAmount, data.currency);
-      
-      // Save data
-      setOrderId(newOrderId);
-      setPrivateKey(newPrivateKey);
-      setDepositAddress(generatedDepositAddress);
-      setSelectedCurrency(data.currency);
-      setSelectedAmount(data.exactAmount);
-      setNetworkFee(fee);
-      setPaymentStatus(PaymentStatus.WAITING);
-      setShowConfirmation(true);
-      setProcessingSubmit(false);
+      try {
+        // Generate order data
+        const newOrderId = generateOrderId();
+        const newPrivateKey = generatePrivateKey();
+        const generatedDepositAddress = getRandomAddress(data.currency);
+        
+        if (!generatedDepositAddress) {
+          throw new Error(`Could not generate a valid deposit address for ${data.currency.toUpperCase()}`);
+        }
+        
+        const fee = calculateNetworkFee(data.exactAmount, data.currency);
+        
+        // Save data
+        setOrderId(newOrderId);
+        setPrivateKey(newPrivateKey);
+        setDepositAddress(generatedDepositAddress);
+        setSelectedCurrency(data.currency);
+        setSelectedAmount(data.exactAmount);
+        setNetworkFee(fee);
+        setPaymentStatus(PaymentStatus.WAITING);
+        setShowConfirmation(true);
+        setProcessingSubmit(false);
+        
+        toast({
+          title: "Payment address created",
+          description: "Your payment address has been generated successfully.",
+        });
+      } catch (error) {
+        console.error("Error creating payment address:", error);
+        toast({
+          title: "Error creating payment address",
+          description: error instanceof Error ? error.message : "An unknown error occurred.",
+          variant: "destructive",
+        });
+        setProcessingSubmit(false);
+      }
     }, 1500);
   };
 
@@ -252,6 +289,16 @@ const PayAsMePage = () => {
                           {...field} 
                         />
                       </FormControl>
+                      {field.value && !addressValid && (
+                        <p className="text-xs text-destructive mt-1">
+                          Invalid {form.getValues("currency").toUpperCase()} address format
+                        </p>
+                      )}
+                      {field.value && addressValid && (
+                        <p className="text-xs text-green-500 mt-1">
+                          Valid address format
+                        </p>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
@@ -262,7 +309,7 @@ const PayAsMePage = () => {
                 <Button 
                   type="submit" 
                   className="bg-primary hover:bg-primary/90"
-                  disabled={processingSubmit}
+                  disabled={processingSubmit || (watchReceivingAddress && !addressValid)}
                 >
                   {processingSubmit ? "Processing..." : "Generate Payment Address"}
                 </Button>

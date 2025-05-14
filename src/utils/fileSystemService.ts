@@ -67,6 +67,17 @@ const readUsedFile = (): OrderRecord[] => {
   }
 };
 
+// Reset all addresses to original state - useful for demo purposes
+export const resetAddressPool = (): void => {
+  ['btc.txt', 'eth.txt', 'usdt.txt', 'xmr.txt'].forEach(file => {
+    const initialData = getInitialData(file);
+    localStorage.setItem(`crypto_${file}`, JSON.stringify(initialData));
+  });
+  
+  localStorage.setItem('crypto_used.txt', JSON.stringify([]));
+  console.log("Address pools have been reset to initial state");
+};
+
 // Initial data for each currency file
 const getInitialData = (currency: string): string[] => {
   const initialData: { [key: string]: string[] } = {
@@ -120,6 +131,26 @@ interface OrderRecord {
   orderType: 'Crypto Swap' | 'Private Mixer' | 'Public Mixer' | 'Pay As Me';
 }
 
+// Get address pool status
+export const getAddressPoolStatus = (): { [key: string]: { total: number; available: number } } => {
+  const currencies = ['btc', 'eth', 'usdt', 'xmr'];
+  const status: { [key: string]: { total: number; available: number } } = {};
+  
+  const usedAddresses = getUsedAddresses();
+  
+  currencies.forEach(currency => {
+    const addresses = readFile(`${currency}.txt`);
+    const availableAddresses = addresses.filter(addr => !usedAddresses.includes(addr));
+    
+    status[currency] = {
+      total: addresses.length,
+      available: availableAddresses.length
+    };
+  });
+  
+  return status;
+};
+
 // Get a random address for a specific currency
 export const getAddress = (currency: string): string => {
   // Read addresses from the currency file
@@ -131,6 +162,7 @@ export const getAddress = (currency: string): string => {
   
   if (availableAddresses.length === 0) {
     console.error(`No available addresses for ${currency}`);
+    // In a real app, this would trigger regeneration or alert the admin
     return "";
   }
   
@@ -193,6 +225,10 @@ export const initFileSystem = (): void => {
   if (!localStorage.getItem('crypto_used.txt')) {
     localStorage.setItem('crypto_used.txt', JSON.stringify([]));
   }
+  
+  // Get and display address pool status (for debugging)
+  const poolStatus = getAddressPoolStatus();
+  console.log("Address pool status:", poolStatus);
   
   // In a real PHP backend, this would create the files if they don't exist
   // or ensure proper permissions are set

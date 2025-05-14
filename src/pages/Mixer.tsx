@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,7 +15,7 @@ import InfoTooltip from "@/components/InfoTooltip";
 import CryptoIcon from "@/components/CryptoIcon";
 import AddressDisplay from "@/components/AddressDisplay";
 import GuaranteeLetter from "@/components/GuaranteeLetter";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const privateMixerSchema = z.object({
@@ -42,6 +42,10 @@ const Mixer = () => {
   const [mixerType, setMixerType] = useState<"private" | "public">("private");
   const [selectedCurrency, setSelectedCurrency] = useState("btc");
   const [selectedAmount, setSelectedAmount] = useState<number | undefined>(undefined);
+  const [processing, setProcessing] = useState(false);
+  const [privateAddressValid, setPrivateAddressValid] = useState(false);
+  const [publicReceivingAddressValid, setPublicReceivingAddressValid] = useState(false);
+  const [publicSendingAddressValid, setPublicSendingAddressValid] = useState(false);
 
   // Private mixer form
   const privateMixerForm = useForm<PrivateMixerFormValues>({
@@ -63,50 +67,143 @@ const Mixer = () => {
     },
   });
 
+  // Watch private form values for validation
+  const watchPrivateCurrency = privateMixerForm.watch("currency");
+  const watchPrivateReceivingAddress = privateMixerForm.watch("receivingAddress");
+  
+  // Watch public form values for validation
+  const watchPublicCurrency = publicMixerForm.watch("currency");
+  const watchPublicSendingAddress = publicMixerForm.watch("sendingAddress");
+  const watchPublicReceivingAddress = publicMixerForm.watch("receivingAddress");
+
+  // Validate private receiving address
+  useEffect(() => {
+    if (watchPrivateReceivingAddress && watchPrivateCurrency) {
+      setPrivateAddressValid(isValidAddress(watchPrivateReceivingAddress, watchPrivateCurrency));
+    } else {
+      setPrivateAddressValid(false);
+    }
+  }, [watchPrivateReceivingAddress, watchPrivateCurrency]);
+
+  // Validate public addresses
+  useEffect(() => {
+    if (watchPublicReceivingAddress && watchPublicCurrency) {
+      setPublicReceivingAddressValid(isValidAddress(watchPublicReceivingAddress, watchPublicCurrency));
+    } else {
+      setPublicReceivingAddressValid(false);
+    }
+
+    if (watchPublicSendingAddress && watchPublicCurrency) {
+      setPublicSendingAddressValid(isValidAddress(watchPublicSendingAddress, watchPublicCurrency));
+    } else {
+      setPublicSendingAddressValid(false);
+    }
+  }, [watchPublicReceivingAddress, watchPublicSendingAddress, watchPublicCurrency]);
+
   const onSubmitPrivate = (data: PrivateMixerFormValues) => {
     if (!isValidAddress(data.receivingAddress, data.currency)) {
-      toast.error(`Invalid ${data.currency.toUpperCase()} address format`);
+      toast({
+        title: "Invalid address",
+        description: `Invalid ${data.currency.toUpperCase()} address format. Please check and try again.`,
+        variant: "destructive",
+      });
       return;
     }
 
+    setProcessing(true);
+
     // Generate order data
-    const newOrderId = generateOrderId();
-    const newPrivateKey = generatePrivateKey();
-    const generatedDepositAddress = getRandomAddress(data.currency);
-    
-    // Save data
-    setOrderId(newOrderId);
-    setPrivateKey(newPrivateKey);
-    setDepositAddress(generatedDepositAddress);
-    setSelectedCurrency(data.currency);
-    setMixerType("private");
-    setShowConfirmation(true);
+    setTimeout(() => {
+      try {
+        const newOrderId = generateOrderId();
+        const newPrivateKey = generatePrivateKey();
+        const generatedDepositAddress = getRandomAddress(data.currency);
+        
+        if (!generatedDepositAddress) {
+          throw new Error(`Could not generate a valid deposit address for ${data.currency.toUpperCase()}`);
+        }
+        
+        // Save data
+        setOrderId(newOrderId);
+        setPrivateKey(newPrivateKey);
+        setDepositAddress(generatedDepositAddress);
+        setSelectedCurrency(data.currency);
+        setMixerType("private");
+        setShowConfirmation(true);
+        setProcessing(false);
+        
+        toast({
+          title: "Private mixer address created",
+          description: "Your mixing address has been generated successfully.",
+        });
+      } catch (error) {
+        console.error("Error creating mixer address:", error);
+        toast({
+          title: "Error creating mixer address",
+          description: error instanceof Error ? error.message : "An unknown error occurred.",
+          variant: "destructive",
+        });
+        setProcessing(false);
+      }
+    }, 1000);
   };
 
   const onSubmitPublic = (data: PublicMixerFormValues) => {
     if (!isValidAddress(data.receivingAddress, data.currency)) {
-      toast.error(`Invalid receiving ${data.currency.toUpperCase()} address format`);
+      toast({
+        title: "Invalid receiving address",
+        description: `Invalid receiving ${data.currency.toUpperCase()} address format. Please check and try again.`,
+        variant: "destructive",
+      });
       return;
     }
 
     if (!isValidAddress(data.sendingAddress, data.currency)) {
-      toast.error(`Invalid sending ${data.currency.toUpperCase()} address format`);
+      toast({
+        title: "Invalid sending address",
+        description: `Invalid sending ${data.currency.toUpperCase()} address format. Please check and try again.`,
+        variant: "destructive",
+      });
       return;
     }
 
+    setProcessing(true);
+
     // Generate order data
-    const newOrderId = generateOrderId();
-    const newPrivateKey = generatePrivateKey();
-    const generatedDepositAddress = getRandomAddress(data.currency);
-    
-    // Save data
-    setOrderId(newOrderId);
-    setPrivateKey(newPrivateKey);
-    setDepositAddress(generatedDepositAddress);
-    setSelectedCurrency(data.currency);
-    setSelectedAmount(data.amount);
-    setMixerType("public");
-    setShowConfirmation(true);
+    setTimeout(() => {
+      try {
+        const newOrderId = generateOrderId();
+        const newPrivateKey = generatePrivateKey();
+        const generatedDepositAddress = getRandomAddress(data.currency);
+        
+        if (!generatedDepositAddress) {
+          throw new Error(`Could not generate a valid deposit address for ${data.currency.toUpperCase()}`);
+        }
+        
+        // Save data
+        setOrderId(newOrderId);
+        setPrivateKey(newPrivateKey);
+        setDepositAddress(generatedDepositAddress);
+        setSelectedCurrency(data.currency);
+        setSelectedAmount(data.amount);
+        setMixerType("public");
+        setShowConfirmation(true);
+        setProcessing(false);
+        
+        toast({
+          title: "Public mixer address created",
+          description: "Your mixing address has been generated successfully.",
+        });
+      } catch (error) {
+        console.error("Error creating mixer address:", error);
+        toast({
+          title: "Error creating mixer address",
+          description: error instanceof Error ? error.message : "An unknown error occurred.",
+          variant: "destructive",
+        });
+        setProcessing(false);
+      }
+    }, 1000);
   };
 
   return (
@@ -175,6 +272,16 @@ const Mixer = () => {
                         <FormControl>
                           <Input placeholder="Your wallet address" {...field} />
                         </FormControl>
+                        {field.value && !privateAddressValid && (
+                          <p className="text-xs text-destructive mt-1">
+                            Invalid {privateMixerForm.getValues("currency").toUpperCase()} address format
+                          </p>
+                        )}
+                        {field.value && privateAddressValid && (
+                          <p className="text-xs text-green-500 mt-1">
+                            Valid address format
+                          </p>
+                        )}
                         <FormMessage />
                       </FormItem>
                     )}
@@ -182,7 +289,12 @@ const Mixer = () => {
                 </div>
 
                 <div className="flex justify-end">
-                  <Button type="submit">Continue</Button>
+                  <Button 
+                    type="submit" 
+                    disabled={processing || (watchPrivateReceivingAddress && !privateAddressValid)}
+                  >
+                    {processing ? "Processing..." : "Continue"}
+                  </Button>
                 </div>
               </form>
             </Form>
@@ -271,6 +383,16 @@ const Mixer = () => {
                         <FormControl>
                           <Input placeholder="Address sending the funds" {...field} />
                         </FormControl>
+                        {field.value && !publicSendingAddressValid && (
+                          <p className="text-xs text-destructive mt-1">
+                            Invalid sending {publicMixerForm.getValues("currency").toUpperCase()} address format
+                          </p>
+                        )}
+                        {field.value && publicSendingAddressValid && (
+                          <p className="text-xs text-green-500 mt-1">
+                            Valid sending address format
+                          </p>
+                        )}
                         <FormMessage />
                       </FormItem>
                     )}
@@ -288,6 +410,16 @@ const Mixer = () => {
                         <FormControl>
                           <Input placeholder="Address receiving the funds" {...field} />
                         </FormControl>
+                        {field.value && !publicReceivingAddressValid && (
+                          <p className="text-xs text-destructive mt-1">
+                            Invalid receiving {publicMixerForm.getValues("currency").toUpperCase()} address format
+                          </p>
+                        )}
+                        {field.value && publicReceivingAddressValid && (
+                          <p className="text-xs text-green-500 mt-1">
+                            Valid receiving address format
+                          </p>
+                        )}
                         <FormMessage />
                       </FormItem>
                     )}
@@ -295,7 +427,16 @@ const Mixer = () => {
                 </div>
 
                 <div className="flex justify-end">
-                  <Button type="submit">Continue</Button>
+                  <Button 
+                    type="submit" 
+                    disabled={
+                      processing || 
+                      (watchPublicReceivingAddress && !publicReceivingAddressValid) || 
+                      (watchPublicSendingAddress && !publicSendingAddressValid)
+                    }
+                  >
+                    {processing ? "Processing..." : "Continue"}
+                  </Button>
                 </div>
               </form>
             </Form>

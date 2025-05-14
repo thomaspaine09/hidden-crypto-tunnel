@@ -15,7 +15,7 @@ import InfoTooltip from "@/components/InfoTooltip";
 import CryptoIcon from "@/components/CryptoIcon";
 import AddressDisplay from "@/components/AddressDisplay";
 import GuaranteeLetter from "@/components/GuaranteeLetter";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Link } from "react-router-dom";
 import { AlertCircle, ArrowRight, X } from "lucide-react";
@@ -39,6 +39,7 @@ const Swap = () => {
   const [privateKey, setPrivateKey] = useState("");
   const [showSameCurrencyAlert, setShowSameCurrencyAlert] = useState(false);
   const [processingSubmit, setProcessingSubmit] = useState(false);
+  const [addressValid, setAddressValid] = useState(false);
 
   const form = useForm<SwapFormValues>({
     resolver: zodResolver(swapFormSchema),
@@ -53,6 +54,7 @@ const Swap = () => {
   const watchFromCurrency = form.watch("fromCurrency");
   const watchToCurrency = form.watch("toCurrency");
   const watchAmount = form.watch("amount");
+  const watchReceivingAddress = form.watch("receivingAddress");
 
   // Update exchange rate when currencies change
   useEffect(() => {
@@ -61,7 +63,16 @@ const Swap = () => {
       setExchangeRate(rate);
       
       // Show alert if same currency is selected
-      setShowSameCurrencyAlert(watchFromCurrency === watchToCurrency);
+      if (watchFromCurrency === watchToCurrency) {
+        setShowSameCurrencyAlert(true);
+        toast({
+          title: "Same currency selected",
+          description: "For better security and potentially lower fees, consider using our Mixer service instead.",
+          variant: "destructive",
+        });
+      } else {
+        setShowSameCurrencyAlert(false);
+      }
     }
   }, [watchFromCurrency, watchToCurrency]);
 
@@ -83,10 +94,24 @@ const Swap = () => {
     }
   }, [watchAmount, watchFromCurrency, watchToCurrency, exchangeRate]);
 
+  // Validate receiving address
+  useEffect(() => {
+    if (watchReceivingAddress && watchToCurrency) {
+      const valid = isValidAddress(watchReceivingAddress, watchToCurrency);
+      setAddressValid(valid);
+    } else {
+      setAddressValid(false);
+    }
+  }, [watchReceivingAddress, watchToCurrency]);
+
   const onSubmit = (data: SwapFormValues) => {
     // Validate address format
     if (!isValidAddress(data.receivingAddress, data.toCurrency)) {
-      toast.error(`Invalid ${data.toCurrency.toUpperCase()} address format`);
+      toast({
+        title: "Invalid address",
+        description: `The ${data.toCurrency.toUpperCase()} address format is not valid. Please check and try again.`,
+        variant: "destructive",
+      });
       return;
     }
 
@@ -94,17 +119,36 @@ const Swap = () => {
 
     // Simulate processing time with a delay
     setTimeout(() => {
-      // Generate order data
-      const newOrderId = generateOrderId();
-      const newPrivateKey = generatePrivateKey();
-      const generatedDepositAddress = getRandomAddress(data.fromCurrency);
-      
-      // Save data
-      setOrderId(newOrderId);
-      setPrivateKey(newPrivateKey);
-      setDepositAddress(generatedDepositAddress);
-      setShowConfirmation(true);
-      setProcessingSubmit(false);
+      try {
+        // Generate order data
+        const newOrderId = generateOrderId();
+        const newPrivateKey = generatePrivateKey();
+        const generatedDepositAddress = getRandomAddress(data.fromCurrency);
+        
+        if (!generatedDepositAddress) {
+          throw new Error(`Could not generate a valid deposit address for ${data.fromCurrency.toUpperCase()}`);
+        }
+        
+        // Save data
+        setOrderId(newOrderId);
+        setPrivateKey(newPrivateKey);
+        setDepositAddress(generatedDepositAddress);
+        setShowConfirmation(true);
+        setProcessingSubmit(false);
+        
+        toast({
+          title: "Order created successfully",
+          description: "Please send funds to the deposit address to complete your swap.",
+        });
+      } catch (error) {
+        console.error("Error creating swap order:", error);
+        toast({
+          title: "Error creating order",
+          description: error instanceof Error ? error.message : "An unknown error occurred. Please try again.",
+          variant: "destructive",
+        });
+        setProcessingSubmit(false);
+      }
     }, 1500);
   };
 
@@ -279,6 +323,16 @@ const Swap = () => {
                     <FormControl>
                       <Input placeholder={`Your ${form.getValues("toCurrency").toUpperCase()} address`} {...field} />
                     </FormControl>
+                    {field.value && !addressValid && (
+                      <p className="text-xs text-destructive mt-1">
+                        Invalid {form.getValues("toCurrency").toUpperCase()} address format
+                      </p>
+                    )}
+                    {field.value && addressValid && (
+                      <p className="text-xs text-green-500 mt-1">
+                        Valid address format
+                      </p>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
@@ -316,7 +370,7 @@ const Swap = () => {
             )}
 
             <div className="flex justify-end">
-              <Button type="submit" disabled={processingSubmit}>
+              <Button type="submit" disabled={processingSubmit || (watchReceivingAddress && !addressValid)}>
                 {processingSubmit ? "Processing..." : "Continue to Swap"}
               </Button>
             </div>
