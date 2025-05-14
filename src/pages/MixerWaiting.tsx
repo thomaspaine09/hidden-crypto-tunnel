@@ -1,15 +1,13 @@
 
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 const MixerWaiting = () => {
-  const { id } = useParams();
   const navigate = useNavigate();
   const [countdown, setCountdown] = useState(30);
-  const [checking, setChecking] = useState(true);
   
   // Simulate checking for a transaction
   useEffect(() => {

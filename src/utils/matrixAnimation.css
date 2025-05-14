@@ -1,114 +1,107 @@
 
-/* Matrix animation and styling */
-
-@keyframes matrix-rain-1 {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(100vh); }
-}
-
-@keyframes matrix-rain-2 {
-  0% { transform: translateY(-150%); }
-  100% { transform: translateY(100vh); }
-}
-
-@keyframes matrix-rain-3 {
-  0% { transform: translateY(-200%); }
-  100% { transform: translateY(100vh); }
-}
-
-@keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
-}
-
-.matrix-code-1 {
-  position: absolute;
-  top: 0;
-  left: 10%;
-  font-family: monospace;
-  font-size: 14px;
-  color: var(--primary);
-  white-space: nowrap;
-  transform: translateY(-100%);
-  animation: matrix-rain-1 15s linear infinite;
-  opacity: 0.3;
-}
-
-.matrix-code-2 {
-  position: absolute;
-  top: 0;
-  left: 40%;
-  font-family: monospace;
-  font-size: 14px;
-  color: var(--primary);
-  white-space: nowrap;
-  transform: translateY(-100%);
-  animation: matrix-rain-2 20s linear infinite;
-  animation-delay: 5s;
-  opacity: 0.2;
-}
-
-.matrix-code-3 {
-  position: absolute;
-  top: 0;
-  left: 70%;
-  font-family: monospace;
-  font-size: 14px;
-  color: var(--primary);
-  white-space: nowrap;
-  transform: translateY(-100%);
-  animation: matrix-rain-3 18s linear infinite;
-  animation-delay: 2s;
-  opacity: 0.25;
-}
-
+/* Matrix animation styles */
 .matrix-rain {
   position: absolute;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
-  overflow: hidden;
-  user-select: none;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
 }
 
 .matrix-rain::before {
-  content: "01010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101";
+  content: "";
   position: absolute;
-  top: -100px;
-  left: 10%;
-  color: var(--primary);
-  font-size: 30px;
-  font-family: monospace;
-  letter-spacing: 5px;
-  line-height: 1.2;
-  opacity: 0.1;
-  animation: matrix-rain-1 20s linear infinite;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to bottom, 
+    rgba(0, 0, 0, 0) 0%,
+    rgba(32, 32, 32, 0.2) 50%, 
+    rgba(32, 32, 32, 0.5) 100%);
 }
 
-.matrix-rain::after {
-  content: "10101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010";
+.matrix-code-1,
+.matrix-code-2,
+.matrix-code-3,
+.matrix-code-4,
+.matrix-code-5 {
   position: absolute;
-  top: -200px;
-  left: 50%;
-  color: var(--primary);
-  font-size: 26px;
+  width: 100%;
   font-family: monospace;
-  letter-spacing: 5px;
-  line-height: 1.2;
-  opacity: 0.08;
-  animation: matrix-rain-2 25s linear infinite;
+  font-size: 8px;
+  color: #20e020;
+  white-space: nowrap;
+  overflow: hidden;
+  user-select: none;
+}
+
+.matrix-code-1 {
+  top: 0%; 
+  left: 0%;
+  opacity: 0.5;
+  animation: flow 20s linear infinite;
+}
+
+.matrix-code-2 {
+  top: 20%; 
+  left: -100px;
+  opacity: 0.3;
+  animation: flow 15s linear infinite;
+}
+
+.matrix-code-3 {
+  top: 40%; 
+  left: 50px;
+  opacity: 0.4;
+  animation: flow 25s linear infinite;
+}
+
+.matrix-code-4 {
+  top: 60%; 
+  left: -75px;
+  opacity: 0.3;
+  animation: flow 17s linear infinite;
+}
+
+.matrix-code-5 {
+  top: 80%; 
+  left: 25px;
+  opacity: 0.5;
+  animation: flow 22s linear infinite;
+}
+
+@keyframes flow {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(100%); }
 }
 
 .binary-pattern {
   position: absolute;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: repeating-linear-gradient(0deg, transparent, transparent 20px, var(--primary) 20px, var(--primary) 21px),
-                    repeating-linear-gradient(90deg, transparent, transparent 20px, var(--primary) 20px, var(--primary) 21px);
-  opacity: 0.02;
+  width: 100%;
+  height: 100%;
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(32, 32, 32, 0.1) 0px,
+    rgba(32, 32, 32, 0.1) 1px,
+    transparent 1px,
+    transparent 10px
+  );
+}
+
+/* Custom animation */
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
