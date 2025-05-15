@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -320,7 +319,7 @@ const Swap = () => {
                           {...field}
                         />
                         <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-muted-foreground">
-                          {form.getValues("fromCurrency").toUpperCase()}
+                          {watchFromCurrency.toUpperCase()}
                         </div>
                       </div>
                     </FormControl>
@@ -339,11 +338,11 @@ const Swap = () => {
                       Receiving Address <InfoTooltip text="Enter the wallet address where you want to receive your exchanged funds" />
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder={`Your ${form.getValues("toCurrency").toUpperCase()} address`} {...field} />
+                      <Input placeholder={`Your ${watchToCurrency.toUpperCase()} address`} {...field} />
                     </FormControl>
                     {field.value && !addressValid && (
                       <p className="text-xs text-destructive mt-1">
-                        Invalid {form.getValues("toCurrency").toUpperCase()} address format
+                        Invalid {watchToCurrency.toUpperCase()} address format
                       </p>
                     )}
                     {field.value && addressValid && (
@@ -422,9 +421,9 @@ const Swap = () => {
             depositAddress={depositAddress}
             privateKey={privateKey}
             orderType="Crypto Swap"
-            fromCurrency={form.getValues("fromCurrency")}
-            toCurrency={form.getValues("toCurrency")}
-            amount={form.getValues("amount")}
+            fromCurrency={watchFromCurrency}
+            toCurrency={watchToCurrency}
+            amount={watchAmount}
           />
 
           <div className="mt-6 text-center">
