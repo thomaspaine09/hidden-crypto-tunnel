@@ -15,7 +15,7 @@ import InfoTooltip from "@/components/InfoTooltip";
 import CryptoIcon from "@/components/CryptoIcon";
 import AddressDisplay from "@/components/AddressDisplay";
 import GuaranteeLetter from "@/components/GuaranteeLetter";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Link } from "react-router-dom";
 import { AlertCircle, ArrowRight, X } from "lucide-react";
@@ -30,6 +30,7 @@ const swapFormSchema = z.object({
 type SwapFormValues = z.infer<typeof swapFormSchema>;
 
 const Swap = () => {
+  const { toast } = useToast();
   const [exchangeRate, setExchangeRate] = useState(0);
   const [networkFee, setNetworkFee] = useState(0);
   const [finalAmount, setFinalAmount] = useState(0);

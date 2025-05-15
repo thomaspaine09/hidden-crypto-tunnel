@@ -1,10 +1,10 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 import CryptoIcon from "./CryptoIcon";
-import { ArrowRight, Copy } from "lucide-react";
+import { Copy } from "lucide-react";
 
 interface AddressDisplayProps {
   address: string;
@@ -23,6 +23,7 @@ const AddressDisplay = ({
   exactAmount,
   networkFee
 }: AddressDisplayProps) => {
+  const { toast } = useToast();
   const [minutes, setMinutes] = useState(2);
   const [seconds, setSeconds] = useState(0);
 
@@ -55,10 +56,17 @@ const AddressDisplay = ({
   const copyToClipboard = () => {
     navigator.clipboard.writeText(address).then(
       () => {
-        toast.success("Address copied to clipboard");
+        toast({
+          title: "Success",
+          description: "Address copied to clipboard",
+        });
       },
       (err) => {
-        toast.error("Could not copy address");
+        toast({
+          title: "Error",
+          description: "Could not copy address",
+          variant: "destructive",
+        });
         console.error("Could not copy address: ", err);
       }
     );
