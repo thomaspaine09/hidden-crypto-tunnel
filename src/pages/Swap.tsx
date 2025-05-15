@@ -76,7 +76,7 @@ const Swap = () => {
         setShowSameCurrencyAlert(false);
       }
     }
-  }, [watchFromCurrency, watchToCurrency]);
+  }, [watchFromCurrency, watchToCurrency, toast]);
 
   // Recalculate fees and final amount
   useEffect(() => {
@@ -94,7 +94,7 @@ const Swap = () => {
       );
       setFinalAmount(calculated);
     }
-  }, [watchAmount, watchFromCurrency, watchToCurrency, exchangeRate]);
+  }, [watchAmount, watchFromCurrency, watchToCurrency]);
 
   // Validate receiving address
   useEffect(() => {
@@ -107,6 +107,8 @@ const Swap = () => {
   }, [watchReceivingAddress, watchToCurrency]);
 
   const onSubmit = (data: SwapFormValues) => {
+    console.log("Form submitted with data:", data);
+    
     // Validate address format
     if (!isValidAddress(data.receivingAddress, data.toCurrency)) {
       toast({
@@ -136,6 +138,8 @@ const Swap = () => {
         const newOrderId = generateOrderId();
         const newPrivateKey = generatePrivateKey();
         const generatedDepositAddress = getRandomAddress(data.fromCurrency);
+        
+        console.log("Generated deposit address:", generatedDepositAddress);
         
         if (!generatedDepositAddress) {
           throw new Error(`Could not generate a valid deposit address for ${data.fromCurrency.toUpperCase()}`);
@@ -221,6 +225,7 @@ const Swap = () => {
                     </FormLabel>
                     <Select
                       onValueChange={(value) => {
+                        console.log("From currency changed to:", value);
                         if (value === field.value) {
                           return;
                         }
@@ -264,6 +269,7 @@ const Swap = () => {
                     </FormLabel>
                     <Select
                       onValueChange={(value) => {
+                        console.log("To currency changed to:", value);
                         if (value === field.value) {
                           return;
                         }

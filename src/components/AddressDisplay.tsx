@@ -91,7 +91,7 @@ const AddressDisplay = ({
       <CardHeader className="pb-2">
         <CardTitle className="text-sm flex items-center gap-2">
           <CryptoIcon symbol={currency} size="sm" />
-          <span>Deposit Address</span>
+          <span>{currency.toUpperCase()} Deposit Address</span>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -124,7 +124,7 @@ const AddressDisplay = ({
         {exactAmount && (
           <div className="mt-4 p-3 border border-primary/20 bg-primary/5 rounded-md">
             <h4 className="text-sm font-semibold text-center mb-2">EXACT AMOUNT RECEIVER WILL RECEIVE</h4>
-            <p className="text-center font-bold">{formatAmount(exactAmount)} {currency.toUpperCase()}</p>
+            <p className="text-center font-bold">{formatAmount(exactAmount, currency)} {currency.toUpperCase()}</p>
           </div>
         )}
 
