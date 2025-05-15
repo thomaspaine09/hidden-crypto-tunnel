@@ -152,7 +152,6 @@ function toast(props: Toast) {
     type: actionTypes.ADD_TOAST,
     toast: {
       ...props,
-      id,
       open: true,
       onOpenChange: (open) => {
         if (!open) dismiss();
@@ -161,7 +160,7 @@ function toast(props: Toast) {
   });
 
   return {
-    id: id,
+    id,
     dismiss,
     update,
   };
