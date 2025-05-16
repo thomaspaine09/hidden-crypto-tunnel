@@ -1,4 +1,3 @@
-
 import * as React from "react";
 import { ToastActionElement, ToastProps } from "@/components/ui/toast";
 
@@ -11,8 +10,8 @@ export type ToasterToast = {
   description?: React.ReactNode;
   action?: ToastActionElement;
   variant?: "default" | "destructive";
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 };
 
 const actionTypes = {
@@ -137,7 +136,7 @@ function dispatch(action: Action) {
   });
 }
 
-export type Toast = Omit<ToasterToast, "id">;
+export type Toast = Omit<ToasterToast, "id" | "open" | "onOpenChange">;
 
 function toast(props: Toast): string {
   const id = genId();

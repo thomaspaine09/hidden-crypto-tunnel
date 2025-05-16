@@ -11,9 +11,12 @@ This comprehensive guide provides detailed instructions for converting this Reac
 4. [Data Storage System](#data-storage-system)
 5. [User Interface Implementation](#user-interface-implementation)
 6. [Security Considerations](#security-considerations)
-7. [Step-by-Step Implementation Plan](#step-by-step-implementation-plan)
-8. [Testing and Validation](#testing-and-validation)
-9. [Deployment Considerations](#deployment-considerations)
+7. [Authentication and Authorization](#authentication-and-authorization)
+8. [Step-by-Step Implementation Plan](#step-by-step-implementation-plan)
+9. [Testing and Validation](#testing-and-validation)
+10. [Deployment Considerations](#deployment-considerations)
+11. [Maintenance and Scaling](#maintenance-and-scaling)
+12. [Troubleshooting](#troubleshooting)
 
 ## Project Overview
 
@@ -21,10 +24,20 @@ The Anonymous Crypto Swap platform provides several privacy-focused cryptocurren
 
 - **Crypto Swap**: Exchange one cryptocurrency for another anonymously
 - **Private Mixer**: Mix cryptocurrencies for enhanced privacy
+- **Public Mixer**: Mix cryptocurrencies with a public pool
 - **Pay As Me**: Generate payment addresses on behalf of users
 - **Track Order**: Allow users to check the status of their transactions
 
 The application must maintain the same functionality and user experience as the React version while using PHP and text files for data storage.
+
+### Key Requirements
+
+1. **Privacy-Focused**: No user tracking, logging, or personal information storage
+2. **No Database**: All data stored in text files with proper security measures
+3. **Responsive Design**: Mobile-friendly interface that matches the React version
+4. **Real-time Updates**: Simulate real-time functionality using AJAX polling
+5. **Design Consistency**: Maintain the same visual design and user experience
+6. **Security**: Implement best practices for secure file handling and user input
 
 ## Architecture
 
@@ -36,6 +49,7 @@ The application must maintain the same functionality and user experience as the 
 - **Storage**: Text files in a protected directory structure
 - **Sessions**: PHP session management for short-term data
 - **Templating**: PHP templates with component-based structure
+- **Request Handling**: RESTful API endpoints for AJAX operations
 
 ### Client-Side Architecture
 
@@ -43,6 +57,31 @@ The application must maintain the same functionality and user experience as the 
 - **Styling**: Tailwind CSS (compiled to static CSS)
 - **Interactivity**: AJAX for asynchronous operations
 - **Form Handling**: Client-side validation with server-side verification
+- **Visual Feedback**: Toast notifications and loading indicators
+- **Responsive Design**: Mobile-first approach with responsive breakpoints
+
+### Application Flow
+
+1. **User Interaction**
+   - User selects service type (Swap, Mixer, Pay As Me, Track)
+   - User fills form with required information
+   - Client-side validation occurs instantly
+
+2. **Data Processing**
+   - Form data sent via AJAX to PHP endpoint
+   - Server validates input and performs security checks
+   - Address selected from appropriate pool 
+   - Order recorded in text file
+
+3. **Response Handling**
+   - Server returns JSON response
+   - Client renders appropriate view (confirmation, deposit address, etc.)
+   - Timer starts for payment checking if applicable
+
+4. **Order Completion**
+   - User completes payment to provided address
+   - System periodically checks for confirmation (simulated in demo)
+   - Guarantee letter provided as proof of transaction
 
 ## Directory Structure
 
@@ -53,9 +92,24 @@ The application must maintain the same functionality and user experience as the 
 │   │   └── tailwind.css     # Compiled Tailwind CSS
 │   ├── js/                  # JavaScript files
 │   │   ├── components/      # JS component handlers
+│   │   │   ├── addressDisplay.js  # Address display component
+│   │   │   ├── cryptoIcon.js      # Cryptocurrency icon component
+│   │   │   ├── guaranteeLetter.js # Guarantee letter component
+│   │   │   └── toast.js           # Toast notification system
 │   │   ├── utils/           # JS utility functions
-│   │   └── pages/           # Page-specific JS
+│   │   │   ├── validation.js      # Form validation
+│   │   │   ├── formatting.js      # Currency formatting
+│   │   │   └── clipboard.js       # Copy to clipboard functionality
+│   │   ├── pages/           # Page-specific JS
+│   │   │   ├── swap.js            # Swap page functionality
+│   │   │   ├── mixer.js           # Mixer page functionality
+│   │   │   ├── payAsMe.js         # Pay As Me page functionality
+│   │   │   └── trackOrder.js      # Track Order page functionality
+│   │   └── main.js          # Core JavaScript
 │   └── img/                 # Images and icons
+│       ├── crypto-icons/    # Cryptocurrency icons
+│       ├── ui/              # UI elements and decorations
+│       └── favicon.ico      # Site favicon
 │
 ├── includes/                # PHP functions and components
 │   ├── config.php           # Configuration settings
@@ -71,17 +125,21 @@ The application must maintain the same functionality and user experience as the 
 │   ├── eth.txt              # ETH addresses
 │   ├── usdt.txt             # USDT addresses
 │   ├── xmr.txt              # XMR addresses
-│   └── used.txt             # Used addresses and orders
+│   ├── used.txt             # Used addresses and orders
+│   └── stats.txt            # Usage statistics (anonymous)
 │
 ├── api/                     # AJAX endpoints
 │   ├── get-address.php      # Get crypto address API
 │   ├── create-swap.php      # Create swap order API
+│   ├── create-mixer.php     # Create mixer order API
+│   ├── create-payment.php   # Create payment address API
 │   ├── check-payment.php    # Check payment status API
 │   └── track-order.php      # Track order API
 │
+├── .htaccess                # Server configuration and security rules
 ├── index.php                # Homepage
 ├── swap.php                 # Crypto Swap page
-├── mixer.php                # Mixer page
+├── mixer.php                # Mixer page (private and public)
 ├── pay-as-me.php            # Pay As Me page
 └── track.php                # Track Order page
 ```
@@ -97,6 +155,14 @@ Each cryptocurrency has its own text file containing available addresses:
 - **usdt.txt**: One USDT address per line
 - **xmr.txt**: One Monero address per line
 
+Example address file format:
+```
+1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa
+3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy
+bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq
+bc1qc7slrfxkknqcq2jevvvkdgvrt8080852dfjewde450xdlk4ugp7szw5tk9
+```
+
 ### Order Storage
 
 The `used.txt` file contains JSON-encoded order records, one per line:
@@ -107,7 +173,16 @@ The `used.txt` file contains JSON-encoded order records, one per line:
 
 ### File Operations Implementation
 
-The `fileSystem.php` file will implement all file operations:
+The `fileSystem.php` file will implement all file operations using these key functions:
+
+1. **getAddress($currency)**: Get a random unused address for specific cryptocurrency
+2. **getUsedAddresses()**: Get list of all addresses that have been used
+3. **recordOrder(...)**: Save new order to the used.txt file
+4. **findOrder($orderId, $privateKey)**: Find and return order details by ID and key
+5. **initFileSystem()**: Initialize the file system, creating files if needed
+6. **getAddressPoolStatus()**: Get statistics about address availability
+
+Implementation details:
 
 ```php
 <?php
@@ -123,8 +198,28 @@ function getAddress($currency) {
         return "";
     }
     
-    // Read addresses from file
-    $addresses = file($filePath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    // Read addresses from file with file locking to prevent race conditions
+    $fp = fopen($filePath, 'r');
+    if (!$fp) {
+        error_log("Could not open address file: $filePath");
+        return "";
+    }
+    
+    if (flock($fp, LOCK_SH)) { // Shared lock for reading
+        $addresses = [];
+        while (($line = fgets($fp)) !== false) {
+            $line = trim($line);
+            if (!empty($line)) {
+                $addresses[] = $line;
+            }
+        }
+        flock($fp, LOCK_UN); // Release the lock
+    } else {
+        error_log("Could not obtain lock on address file: $filePath");
+        fclose($fp);
+        return "";
+    }
+    fclose($fp);
     
     // Get used addresses
     $usedAddresses = getUsedAddresses();
@@ -148,13 +243,21 @@ function getUsedAddresses() {
     $usedAddresses = [];
     
     if (file_exists($filePath)) {
-        $lines = file($filePath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-        
-        foreach ($lines as $line) {
-            $order = json_decode($line, true);
-            if ($order && isset($order['depositAddress'])) {
-                $usedAddresses[] = $order['depositAddress'];
+        $fp = fopen($filePath, 'r');
+        if ($fp) {
+            if (flock($fp, LOCK_SH)) { // Shared lock for reading
+                while (($line = fgets($fp)) !== false) {
+                    $line = trim($line);
+                    if (!empty($line)) {
+                        $order = json_decode($line, true);
+                        if ($order && isset($order['depositAddress'])) {
+                            $usedAddresses[] = $order['depositAddress'];
+                        }
+                    }
+                }
+                flock($fp, LOCK_UN); // Release the lock
             }
+            fclose($fp);
         }
     }
     
@@ -180,13 +283,21 @@ function recordOrder($orderId, $fromCurrency, $toCurrency, $amount,
     
     // Append to used.txt using file locking to prevent race conditions
     $fp = fopen($filePath, 'a');
-    if (flock($fp, LOCK_EX)) {
-        fwrite($fp, json_encode($orderRecord) . "\n");
-        flock($fp, LOCK_UN);
+    if (!$fp) {
+        error_log("Could not open used file for writing: $filePath");
+        return false;
+    }
+    
+    $success = false;
+    if (flock($fp, LOCK_EX)) { // Exclusive lock for writing
+        if (fwrite($fp, json_encode($orderRecord) . "\n") !== false) {
+            $success = true;
+        }
+        flock($fp, LOCK_UN); // Release the lock
     }
     fclose($fp);
     
-    return true;
+    return $success;
 }
 
 // Find an order by ID and private key
@@ -197,23 +308,38 @@ function findOrder($orderId, $privateKey) {
         return null;
     }
     
-    $lines = file($filePath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    
-    foreach ($lines as $line) {
-        $order = json_decode($line, true);
-        if ($order && $order['orderId'] === $orderId && $order['privateKey'] === $privateKey) {
-            return $order;
-        }
+    $fp = fopen($filePath, 'r');
+    if (!$fp) {
+        return null;
     }
     
-    return null;
+    $result = null;
+    if (flock($fp, LOCK_SH)) { // Shared lock for reading
+        while (($line = fgets($fp)) !== false) {
+            $line = trim($line);
+            if (!empty($line)) {
+                $order = json_decode($line, true);
+                if ($order && $order['orderId'] === $orderId && $order['privateKey'] === $privateKey) {
+                    $result = $order;
+                    break;
+                }
+            }
+        }
+        flock($fp, LOCK_UN); // Release the lock
+    }
+    fclose($fp);
+    
+    return $result;
 }
 
 // Initialize file system - create files if they don't exist
 function initFileSystem() {
     // Ensure data directory exists with proper permissions
     if (!is_dir(DATA_DIR)) {
-        mkdir(DATA_DIR, 0750, true);
+        if (!mkdir(DATA_DIR, 0750, true)) {
+            error_log("Failed to create data directory: " . DATA_DIR);
+            return false;
+        }
     }
     
     // Default addresses for each currency if files don't exist
@@ -257,16 +383,41 @@ function initFileSystem() {
         $filePath = DATA_DIR . $filename;
         
         if (!file_exists($filePath)) {
-            file_put_contents($filePath, implode("\n", $addresses));
-            chmod($filePath, 0640); // Only readable by owner and group
+            $fp = fopen($filePath, 'w');
+            if ($fp) {
+                if (flock($fp, LOCK_EX)) { // Exclusive lock for writing
+                    fwrite($fp, implode("\n", $addresses));
+                    flock($fp, LOCK_UN); // Release the lock
+                }
+                fclose($fp);
+                chmod($filePath, 0640); // Only readable by owner and group
+            } else {
+                error_log("Failed to create address file: $filePath");
+            }
         }
     }
     
     // Create used.txt if it doesn't exist
     $usedFilePath = DATA_DIR . 'used.txt';
     if (!file_exists($usedFilePath)) {
-        file_put_contents($usedFilePath, '');
-        chmod($usedFilePath, 0640);
+        $fp = fopen($usedFilePath, 'w');
+        if ($fp) {
+            fclose($fp);
+            chmod($usedFilePath, 0640);
+        } else {
+            error_log("Failed to create used file: $usedFilePath");
+            return false;
+        }
+    }
+    
+    // Create stats.txt if it doesn't exist
+    $statsFilePath = DATA_DIR . 'stats.txt';
+    if (!file_exists($statsFilePath)) {
+        $fp = fopen($statsFilePath, 'w');
+        if ($fp) {
+            fclose($fp);
+            chmod($statsFilePath, 0640);
+        }
     }
     
     return true;
@@ -305,6 +456,29 @@ function getAddressPoolStatus() {
     
     return $status;
 }
+
+// Record anonymous usage statistics
+function recordStat($action, $currency = null) {
+    $statsFilePath = DATA_DIR . 'stats.txt';
+    
+    $stat = [
+        'timestamp' => date('c'),
+        'action' => $action,
+        'currency' => $currency
+    ];
+    
+    $fp = fopen($statsFilePath, 'a');
+    if ($fp) {
+        if (flock($fp, LOCK_EX)) {
+            fwrite($fp, json_encode($stat) . "\n");
+            flock($fp, LOCK_UN);
+        }
+        fclose($fp);
+        return true;
+    }
+    
+    return false;
+}
 ?>
 ```
 
@@ -312,8 +486,11 @@ function getAddressPoolStatus() {
 
 ### Component-Based Structure
 
-To replicate the React component structure, create reusable PHP templates:
+To replicate the React component architecture, we'll create reusable PHP templates:
 
+#### Core UI Components
+
+1. **CryptoIcon Component**
 ```php
 <?php
 // includes/templates.php
@@ -349,7 +526,10 @@ function renderCryptoIcon($currency, $size = 'md') {
     </div>
     <?php
 }
+```
 
+2. **AddressDisplay Component**
+```php
 // Render an address display component
 function renderAddressDisplay($address, $currency, $orderId = null, $note = null, $exactAmount = null, $networkFee = null) {
     ?>
@@ -404,7 +584,10 @@ function renderAddressDisplay($address, $currency, $orderId = null, $note = null
     </div>
     <?php
 }
+```
 
+3. **GuaranteeLetter Component**
+```php
 // Render a guarantee letter component
 function renderGuaranteeLetter($orderId, $receivingAddress, $depositAddress, $privateKey, $orderType, $fromCurrency, $toCurrency, $amount) {
     $timestamp = date('c');
@@ -451,7 +634,55 @@ IMPORTANT:
     </div>
     <?php
 }
+```
 
+4. **Toast Component**
+```php
+// Render toast notification system
+function initToastSystem() {
+    ?>
+    <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2"></div>
+    <script>
+    // Toast notification system
+    function showToast(message, type = 'info', duration = 3000) {
+        const toastContainer = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        
+        const bgColor = type === 'success' ? 'bg-green-500' : 
+                       type === 'error' ? 'bg-red-500' : 
+                       type === 'warning' ? 'bg-amber-500' : 'bg-blue-500';
+                       
+        toast.className = `${bgColor} text-white px-4 py-2 rounded-md shadow-lg opacity-0 transition-opacity duration-300`;
+        toast.textContent = message;
+        
+        toastContainer.appendChild(toast);
+        
+        // Fade in
+        setTimeout(() => {
+            toast.classList.remove('opacity-0');
+            toast.classList.add('opacity-100');
+        }, 10);
+        
+        // Fade out and remove
+        setTimeout(() => {
+            toast.classList.remove('opacity-100');
+            toast.classList.add('opacity-0');
+            
+            setTimeout(() => {
+                toastContainer.removeChild(toast);
+            }, 300);
+        }, duration);
+    }
+    
+    // Make function globally available
+    window.showToast = showToast;
+    </script>
+    <?php
+}
+```
+
+5. **Utility Functions**
+```php
 // Format currency amounts consistently
 function formatCurrencyAmount($amount, $currency) {
     $amount = floatval($amount);
@@ -488,10 +719,14 @@ function renderAlert($title, $message, $type = 'info', $actions = null) {
     </div>
     <?php
 }
-?>
 ```
 
 ### Page Implementation Example (Swap Page)
+
+The Swap page will be split into two views:
+
+1. The main form view where users select currencies and enter details
+2. The confirmation view where users receive deposit instructions
 
 ```php
 <?php
@@ -505,12 +740,12 @@ require_once 'includes/templates.php';
 initFileSystem();
 
 // Process form submission via AJAX only
-$confirmationMode = isset($_GET['confirmation']) && isset($_SESSION['order_data']);
+$confirmationMode = isset($_GET['confirmation']) && isset($_SESSION['swap_order_data']);
 
 // Get session data if in confirmation mode
 $orderData = [];
 if ($confirmationMode) {
-    $orderData = $_SESSION['order_data'];
+    $orderData = $_SESSION['swap_order_data'];
 }
 
 // Include header
@@ -537,16 +772,23 @@ require_once 'includes/header.php';
                             From Currency
                             <span class="info-tooltip ml-1" title="Select the cryptocurrency you want to exchange from">?</span>
                         </label>
-                        <select 
-                            id="fromCurrency" 
-                            name="fromCurrency" 
-                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md"
-                        >
-                            <option value="btc">Bitcoin (BTC)</option>
-                            <option value="eth">Ethereum (ETH)</option>
-                            <option value="usdt">Tether (USDT)</option>
-                            <option value="xmr">Monero (XMR)</option>
-                        </select>
+                        <div class="relative">
+                            <select 
+                                id="fromCurrency" 
+                                name="fromCurrency" 
+                                class="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md"
+                            >
+                                <option value="btc">Bitcoin (BTC)</option>
+                                <option value="eth">Ethereum (ETH)</option>
+                                <option value="usdt">Tether (USDT)</option>
+                                <option value="xmr">Monero (XMR)</option>
+                            </select>
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <div id="fromCurrency-icon" class="w-5 h-5 flex items-center justify-center">
+                                    <!-- Icon will be inserted by JS -->
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- To Currency -->
@@ -555,16 +797,23 @@ require_once 'includes/header.php';
                             To Currency
                             <span class="info-tooltip ml-1" title="Select the cryptocurrency you want to exchange to">?</span>
                         </label>
-                        <select 
-                            id="toCurrency" 
-                            name="toCurrency" 
-                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md"
-                        >
-                            <option value="btc">Bitcoin (BTC)</option>
-                            <option value="eth" selected>Ethereum (ETH)</option>
-                            <option value="usdt">Tether (USDT)</option>
-                            <option value="xmr">Monero (XMR)</option>
-                        </select>
+                        <div class="relative">
+                            <select 
+                                id="toCurrency" 
+                                name="toCurrency" 
+                                class="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md"
+                            >
+                                <option value="btc">Bitcoin (BTC)</option>
+                                <option value="eth" selected>Ethereum (ETH)</option>
+                                <option value="usdt">Tether (USDT)</option>
+                                <option value="xmr">Monero (XMR)</option>
+                            </select>
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <div id="toCurrency-icon" class="w-5 h-5 flex items-center justify-center">
+                                    <!-- Icon will be inserted by JS -->
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Amount -->
@@ -579,7 +828,7 @@ require_once 'includes/header.php';
                                 id="amount" 
                                 name="amount" 
                                 step="any" 
-                                min="0" 
+                                min="0.00000001" 
                                 value="0.1" 
                                 class="w-full pr-16 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md"
                             />
@@ -705,6 +954,7 @@ require_once 'includes/header.php';
 </div>
 
 <!-- JavaScript for form handling -->
+<?php if (!$confirmationMode): ?>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Form references
@@ -720,6 +970,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitButton = document.getElementById('submit-button');
     const sameCurrencyAlert = document.getElementById('same-currency-alert');
     const addressValidationMsg = document.getElementById('address-validation-msg');
+    const fromCurrencyIcon = document.getElementById('fromCurrency-icon');
+    const toCurrencyIcon = document.getElementById('toCurrency-icon');
     
     // Exchange rates (from constants)
     const exchangeRates = {
@@ -737,10 +989,31 @@ document.addEventListener('DOMContentLoaded', function() {
         xmr: 0.8
     };
     
+    // Crypto icons
+    const cryptoIcons = {
+        btc: { symbol: '₿', color: 'bg-amber-500' },
+        eth: { symbol: 'Ξ', color: 'bg-blue-500' },
+        usdt: { symbol: '₮', color: 'bg-green-500' },
+        xmr: { symbol: 'ɱ', color: 'bg-orange-500' }
+    };
+    
+    // Update crypto icons
+    function updateCryptoIcon(element, currency) {
+        const icon = cryptoIcons[currency];
+        if (icon) {
+            element.className = `${icon.color} w-5 h-5 rounded-full flex items-center justify-center text-white font-bold`;
+            element.textContent = icon.symbol;
+        }
+    }
+    
     // Update form when currencies change
     function updateFormState() {
         const fromCurrency = fromCurrencySelect.value;
         const toCurrency = toCurrencySelect.value;
+        
+        // Update icons
+        updateCryptoIcon(fromCurrencyIcon, fromCurrency);
+        updateCryptoIcon(toCurrencyIcon, toCurrency);
         
         // Update amount currency display
         amountCurrency.textContent = fromCurrency.toUpperCase();
@@ -878,90 +1151,9 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.appendChild(element);
         element.click();
         document.body.removeChild(element);
+        
+        showToast('File downloaded', 'success');
     };
-    
-    // Show toast notification
-    function showToast(message, type = 'info') {
-        const toast = document.createElement('div');
-        toast.className = `fixed bottom-4 right-4 px-4 py-2 rounded-md text-white ${
-            type === 'success' ? 'bg-green-500' : 
-            type === 'error' ? 'bg-red-500' : 
-            'bg-blue-500'
-        } shadow-lg z-50 animate-fade-in`;
-        
-        toast.textContent = message;
-        document.body.appendChild(toast);
-        
-        setTimeout(() => {
-            toast.classList.add('animate-fade-out');
-            setTimeout(() => {
-                document.body.removeChild(toast);
-            }, 300);
-        }, 3000);
-    }
-    
-    // Countdown timer functionality
-    function initCountdownTimers() {
-        const timers = document.querySelectorAll('.countdown-timer');
-        
-        timers.forEach(timer => {
-            let minutes = parseInt(timer.dataset.minutes) || 0;
-            let seconds = parseInt(timer.dataset.seconds) || 0;
-            const orderId = timer.dataset.orderId || '';
-            
-            const interval = setInterval(() => {
-                seconds--;
-                
-                if (seconds < 0) {
-                    minutes--;
-                    seconds = 59;
-                }
-                
-                if (minutes < 0) {
-                    clearInterval(interval);
-                    // Check payment status
-                    checkPaymentStatus(orderId, timer);
-                    return;
-                }
-                
-                timer.textContent = `Checking again in ${minutes} minute${minutes !== 1 ? 's' : ''} ${seconds} second${seconds !== 1 ? 's' : ''}`;
-            }, 1000);
-        });
-    }
-    
-    // Check payment status via AJAX
-    function checkPaymentStatus(orderId, timerElement) {
-        timerElement.textContent = 'Checking payment status...';
-        
-        fetch(`api/check-payment.php?orderId=${orderId}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.paymentReceived) {
-                    timerElement.textContent = 'Payment confirmed! Processing your swap...';
-                    timerElement.className = 'text-green-500';
-                    
-                    // In a real app, redirect to a success page or show success UI
-                    setTimeout(() => {
-                        showToast('Transaction complete!', 'success');
-                    }, 2000);
-                } else {
-                    // Reset the timer
-                    timerElement.dataset.minutes = '2';
-                    timerElement.dataset.seconds = '59';
-                    timerElement.textContent = 'Checking again in 2 minutes 59 seconds';
-                    initCountdownTimers(); // Restart the timer
-                }
-            })
-            .catch(error => {
-                console.error('Error checking payment:', error);
-                timerElement.textContent = 'Error checking payment status. Retrying in 1 minute...';
-                
-                // Retry after 1 minute
-                setTimeout(() => {
-                    checkPaymentStatus(orderId, timerElement);
-                }, 60000);
-            });
-    }
     
     // Initialize form event listeners
     if (swapForm) {
@@ -1033,11 +1225,101 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
-    
-    // Initialize countdown timers if present
-    initCountdownTimers();
 });
 </script>
+<?php else: ?>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize countdown timers if present
+    initCountdownTimers();
+    
+    // Copy to clipboard function
+    window.copyToClipboard = function(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            showToast('Copied to clipboard', 'success');
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+        });
+    };
+    
+    // Save text as file
+    window.saveTxtFile = function(filename, content) {
+        const element = document.createElement('a');
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content));
+        element.setAttribute('download', filename);
+        element.style.display = 'none';
+        document.body.appendChild(element);
+        element.click();
+        document.body.removeChild(element);
+        
+        showToast('File downloaded', 'success');
+    };
+    
+    // Countdown timer functionality
+    function initCountdownTimers() {
+        const timers = document.querySelectorAll('.countdown-timer');
+        
+        timers.forEach(timer => {
+            let minutes = parseInt(timer.dataset.minutes) || 0;
+            let seconds = parseInt(timer.dataset.seconds) || 0;
+            const orderId = timer.dataset.orderId || '';
+            
+            const interval = setInterval(() => {
+                seconds--;
+                
+                if (seconds < 0) {
+                    minutes--;
+                    seconds = 59;
+                }
+                
+                if (minutes < 0) {
+                    clearInterval(interval);
+                    // Check payment status
+                    checkPaymentStatus(orderId, timer);
+                    return;
+                }
+                
+                timer.textContent = `Checking again in ${minutes} minute${minutes !== 1 ? 's' : ''} ${seconds} second${seconds !== 1 ? 's' : ''}`;
+            }, 1000);
+        });
+    }
+    
+    // Check payment status via AJAX
+    function checkPaymentStatus(orderId, timerElement) {
+        timerElement.textContent = 'Checking payment status...';
+        
+        fetch(`api/check-payment.php?orderId=${orderId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.paymentReceived) {
+                    timerElement.textContent = 'Payment confirmed! Processing your swap...';
+                    timerElement.className = 'text-green-500';
+                    
+                    // In a real app, redirect to a success page or show success UI
+                    setTimeout(() => {
+                        showToast('Transaction complete!', 'success');
+                    }, 2000);
+                } else {
+                    // Reset the timer
+                    timerElement.dataset.minutes = '2';
+                    timerElement.dataset.seconds = '59';
+                    timerElement.textContent = 'Checking again in 2 minutes 59 seconds';
+                    initCountdownTimers(); // Restart the timer
+                }
+            })
+            .catch(error => {
+                console.error('Error checking payment:', error);
+                timerElement.textContent = 'Error checking payment status. Retrying in 1 minute...';
+                
+                // Retry after 1 minute
+                setTimeout(() => {
+                    checkPaymentStatus(orderId, timerElement);
+                }, 60000);
+            });
+    }
+});
+</script>
+<?php endif; ?>
 
 <?php
 // Include footer
@@ -1047,7 +1329,9 @@ require_once 'includes/footer.php';
 
 ## API Implementation
 
-The PHP API endpoints will handle the dynamic functionality:
+The PHP API endpoints handle AJAX requests for dynamic functionality:
+
+### Create Swap API Example
 
 ```php
 <?php
@@ -1067,21 +1351,60 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// Get and validate form data
-$fromCurrency = $_POST['fromCurrency'] ?? '';
-$toCurrency = $_POST['toCurrency'] ?? '';
-$amount = floatval($_POST['amount'] ?? 0);
-$networkFee = floatval($_POST['networkFee'] ?? 0);
-$receivingAddress = $_POST['receivingAddress'] ?? '';
-$orderId = $_POST['orderId'] ?? '';
-$privateKey = $_POST['privateKey'] ?? '';
+// Rate limiting (simple implementation)
+$rateLimit = 5; // requests per minute
+$rateLimitWindow = 60; // seconds
+$clientIp = hash('sha256', $_SERVER['REMOTE_ADDR']); // Hash for privacy
+$now = time();
 
-// Input validation
-if (!$fromCurrency || !$toCurrency) {
-    echo json_encode(['error' => 'Currency selection required']);
+// Check if rate limit data exists in session
+if (!isset($_SESSION['rate_limit'])) {
+    $_SESSION['rate_limit'] = [];
+}
+
+// Clean up old entries
+foreach ($_SESSION['rate_limit'] as $ip => $data) {
+    if ($now - $data['timestamp'] > $rateLimitWindow) {
+        unset($_SESSION['rate_limit'][$ip]);
+    }
+}
+
+// Check rate limit
+if (isset($_SESSION['rate_limit'][$clientIp])) {
+    $data = $_SESSION['rate_limit'][$clientIp];
+    if ($now - $data['timestamp'] <= $rateLimitWindow && $data['count'] >= $rateLimit) {
+        echo json_encode(['error' => 'Rate limit exceeded. Please try again later.']);
+        exit;
+    }
+    
+    // Update count
+    $_SESSION['rate_limit'][$clientIp]['count']++;
+    $_SESSION['rate_limit'][$clientIp]['timestamp'] = $now;
+} else {
+    // First request
+    $_SESSION['rate_limit'][$clientIp] = [
+        'count' => 1,
+        'timestamp' => $now
+    ];
+}
+
+// Get and validate form data
+$fromCurrency = filter_input(INPUT_POST, 'fromCurrency', FILTER_SANITIZE_STRING);
+$toCurrency = filter_input(INPUT_POST, 'toCurrency', FILTER_SANITIZE_STRING);
+$amount = filter_input(INPUT_POST, 'amount', FILTER_VALIDATE_FLOAT);
+$networkFee = filter_input(INPUT_POST, 'networkFee', FILTER_VALIDATE_FLOAT);
+$receivingAddress = filter_input(INPUT_POST, 'receivingAddress', FILTER_SANITIZE_STRING);
+$orderId = filter_input(INPUT_POST, 'orderId', FILTER_SANITIZE_STRING);
+$privateKey = filter_input(INPUT_POST, 'privateKey', FILTER_SANITIZE_STRING);
+
+// Validate currency codes
+$validCurrencies = ['btc', 'eth', 'usdt', 'xmr'];
+if (!in_array($fromCurrency, $validCurrencies) || !in_array($toCurrency, $validCurrencies)) {
+    echo json_encode(['error' => 'Invalid currency selection']);
     exit;
 }
 
+// Input validation
 if ($amount <= 0) {
     echo json_encode(['error' => 'Invalid amount']);
     exit;
@@ -1094,6 +1417,30 @@ if (!$receivingAddress) {
 
 if (!$orderId || !$privateKey) {
     echo json_encode(['error' => 'Missing order information']);
+    exit;
+}
+
+// Advanced address validation based on currency
+$isValidAddress = false;
+switch($toCurrency) {
+    case 'btc':
+        $isValidAddress = preg_match('/^(1|3|bc1)[a-zA-Z0-9]{25,90}$/', $receivingAddress);
+        break;
+    case 'eth':
+        $isValidAddress = preg_match('/^0x[a-fA-F0-9]{40}$/', $receivingAddress);
+        break;
+    case 'usdt':
+        $isValidAddress = preg_match('/^(0x[a-fA-F0-9]{40}|T[a-zA-Z0-9]{33})$/', $receivingAddress);
+        break;
+    case 'xmr':
+        $isValidAddress = preg_match('/^[4|8][a-zA-Z0-9]{94,}$/', $receivingAddress);
+        break;
+    default:
+        $isValidAddress = strlen($receivingAddress) >= 20;
+}
+
+if (!$isValidAddress) {
+    echo json_encode(['error' => "Invalid {$toCurrency} address format"]);
     exit;
 }
 
@@ -1122,8 +1469,11 @@ if (!$result) {
     exit;
 }
 
+// Record anonymous statistics
+recordStat('swap_created', $fromCurrency);
+
 // Store order data in session for confirmation page
-$_SESSION['order_data'] = [
+$_SESSION['swap_order_data'] = [
     'orderId' => $orderId,
     'fromCurrency' => $fromCurrency,
     'toCurrency' => $toCurrency,
@@ -1142,6 +1492,57 @@ echo json_encode([
 ]);
 
 // End script
+exit;
+?>
+```
+
+### Check Payment API Example
+
+```php
+<?php
+// api/check-payment.php
+header('Content-Type: application/json');
+require_once '../includes/config.php';
+
+// Start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// In a real application, this would check blockchain APIs
+// For the demo, we'll simulate a 30% chance of payment being received
+
+$orderId = filter_input(INPUT_GET, 'orderId', FILTER_SANITIZE_STRING);
+
+if (!$orderId) {
+    echo json_encode(['error' => 'Missing order ID']);
+    exit;
+}
+
+// Simulate payment verification
+$paymentReceived = (mt_rand(1, 100) <= 30);
+
+// In a real app, you would check blockchain explorers or payment providers
+
+// If payment received, record it in the used.txt file
+if ($paymentReceived) {
+    // Here you would update the order status
+    // For demo purposes, we'll just return success
+    
+    // Record anonymous statistic
+    if (function_exists('recordStat')) {
+        recordStat('payment_received');
+    }
+}
+
+// Return response
+echo json_encode([
+    'success' => true,
+    'orderId' => $orderId,
+    'paymentReceived' => $paymentReceived,
+    'timestamp' => date('c')
+]);
+
 exit;
 ?>
 ```
@@ -1169,7 +1570,9 @@ exit;
 
 4. **Use File Locking**:
    - Prevent race conditions when multiple users access simultaneously
-   - Implement exclusive locks when writing to files
+   - Implement exclusive locks (LOCK_EX) when writing to files
+   - Implement shared locks (LOCK_SH) when reading files
+   - Always release locks after operations
 
 5. **Input Validation**:
    - Validate all user inputs before processing
@@ -1179,7 +1582,7 @@ exit;
 ### Protecting User Privacy
 
 1. **No Logging of Identifying Information**:
-   - Do not log IP addresses
+   - Do not log IP addresses directly (hash if needed)
    - Do not set tracking cookies
    - Do not implement analytics that identify users
 
@@ -1192,83 +1595,146 @@ exit;
    - Use short-lived sessions
    - Store minimal data in sessions
    - Implement session timeouts
+   - Use secure and HTTP-only flags for cookies
 
 4. **Script Security**:
    - Set proper Content Security Policy headers
    - Implement XSS protection
    - Enable HTTPS for all communication
 
+### Additional Security Measures
+
+1. **Rate Limiting**:
+   - Implement rate limiting for all API endpoints
+   - Use a privacy-preserving approach for tracking request counts
+
+2. **Error Handling**:
+   - Never expose sensitive information in error messages
+   - Log errors securely without exposing user data
+
+3. **Secure Cryptographic Implementation**:
+   - Use vetted cryptography libraries
+   - Never implement custom cryptographic solutions
+
+## Authentication and Authorization
+
+This application is designed to be anonymous, so traditional authentication is not used. However, we employ private keys as a form of authorization:
+
+1. **Order Authorization**:
+   - Users receive a private key for each order
+   - Users must provide both order ID and private key to access order details
+   - The key is only displayed once at order creation
+
+2. **Admin Protection**:
+   - If implementing an admin area, use strong authentication
+   - Consider using .htaccess for basic auth as an additional layer
+   - Keep admin endpoints in a separate directory with restricted access
+
 ## Step-by-Step Implementation Plan
 
-### Phase 1: Foundation Setup
+### Phase 1: Foundation Setup (Week 1)
 
 1. **Directory Structure Setup**
    - Create all directories according to structure
    - Set proper permissions
+   - Configure .htaccess files for security
 
 2. **Core Files Implementation**
    - Implement `config.php` with core settings
    - Implement `fileSystem.php` with file operations
    - Create basic templates and layout files
+   - Set up error handling and logging
 
 3. **Data Storage Initialization**
    - Initialize currency files with addresses
    - Create `used.txt` file
    - Implement file access protection
+   - Test read/write operations
 
-### Phase 2: UI Components
+### Phase 2: UI Components (Week 1-2)
 
 1. **Common UI Elements**
    - Implement header and footer
    - Create CSS styling (compile Tailwind)
    - Build reusable components
+   - Test responsive layout
 
 2. **Home Page**
    - Create landing page with service descriptions
    - Implement navigation
+   - Add service cards and call-to-action elements
 
 3. **Basic JavaScript Utilities**
    - Create utility functions for client-side validation
    - Implement copy to clipboard functionality
    - Create toast notification system
+   - Test cross-browser compatibility
 
-### Phase 3: Core Functionality
+### Phase 3: Core Functionality (Week 2-3)
 
 1. **Crypto Swap Implementation**
    - Complete swap.php with form and confirmation views
-   - Implement API endpoints
+   - Implement API endpoints for swap creation
    - Add address validation
+   - Test end-to-end swap flow
 
 2. **Mixer Implementation**
    - Build mixer.php for both public and private mixing
    - Implement mixing algorithm logic
    - Create mixer confirmation flow
+   - Test mixing functionality
 
 3. **Pay As Me Implementation**
    - Develop pay-as-me.php for payment address generation
    - Implement address display and tracking
+   - Add guarantee letter generation
+   - Test payment address creation
 
 4. **Order Tracking**
    - Create track.php for order lookup
    - Implement private key verification
    - Display order status information
+   - Test order retrieval with various scenarios
 
-### Phase 4: Testing and Security
+### Phase 4: Testing and Security (Week 4)
 
 1. **Security Hardening**
    - Implement all security measures
    - Test for common vulnerabilities
    - Review file permissions
+   - Conduct security audit
 
 2. **Functionality Testing**
    - Test each service with sample transactions
    - Verify order recording and retrieval
    - Ensure proper error handling
+   - Test edge cases and error scenarios
 
 3. **UI/UX Refinement**
    - Ensure responsive design
    - Optimize for mobile
    - Test across browsers
+   - Improve accessibility
+
+### Phase 5: Documentation and Deployment (Week 4)
+
+1. **Documentation**
+   - Create user documentation
+   - Document system architecture
+   - Prepare maintenance guide
+   - Create backup and recovery procedures
+
+2. **Deployment Preparation**
+   - Configure server environment
+   - Set up SSL/TLS
+   - Configure caching
+   - Test in staging environment
+
+3. **Production Deployment**
+   - Deploy to production server
+   - Configure monitoring
+   - Perform final tests
+   - Launch application
 
 ## Testing and Validation
 
@@ -1278,16 +1744,25 @@ exit;
    - Test file operations individually
    - Validate address generation and order recording
    - Verify format validation functions
+   - Test security functions
 
 2. **Integration Tests**
-   - Test complete order flow
+   - Test complete order flow for each service
    - Verify session handling works correctly
    - Test concurrent user scenarios
+   - Ensure proper file locking
 
 3. **Security Tests**
    - Test for XSS vulnerabilities
    - Attempt unauthorized access to data files
    - Verify CSRF protection works
+   - Test rate limiting effectiveness
+
+4. **Performance Tests**
+   - Test response times under load
+   - Evaluate file operation efficiency
+   - Check memory usage
+   - Test with different file sizes
 
 ### Validation Checklists
 
@@ -1295,46 +1770,139 @@ exit;
   - [ ] Data directory not accessible via web
   - [ ] File permissions correctly set
   - [ ] File locking works during concurrent writes
+  - [ ] Backup systems functional
 
 - **UI/UX**
   - [ ] All pages render correctly on desktop and mobile
   - [ ] Form validation works properly
   - [ ] Error messages are clear and helpful
+  - [ ] Accessibility requirements met
 
 - **Functionality**
   - [ ] Addresses are allocated correctly
   - [ ] Orders are recorded properly
   - [ ] Tracking works with order ID and private key
+  - [ ] All mathematical calculations are accurate
 
 ## Deployment Considerations
 
 ### Server Requirements
 
 - PHP 7.4+ (8.0+ recommended)
-- Web server with URL rewriting capability
-- Proper file permissions setup
+- Apache with mod_rewrite or Nginx with URL rewriting
+- Properly configured SSL/TLS certificate
+- Correct file permissions and ownership
 
 ### Performance Optimization
 
-- Implement caching for static content
-- Minify CSS and JavaScript
-- Use PHP opcode caching
+1. **Caching Strategy**
+   - Implement browser caching for static resources
+   - Use PHP opcode caching (OPcache)
+   - Consider implementing a simple file-based cache for frequently accessed data
+
+2. **Resource Optimization**
+   - Minify CSS and JavaScript
+   - Optimize images
+   - Implement lazy loading for non-critical resources
+
+3. **Server Configuration**
+   - Optimize PHP settings
+   - Configure server for efficient file operations
+   - Adjust timeout and memory limits appropriately
 
 ### Backup Strategy
 
-- Regularly back up address files
-- Create rotating backups of `used.txt`
-- Document recovery procedures
+1. **Regular Backups**
+   - Schedule daily backups of all data files
+   - Store backups in separate location
+   - Implement rotation policy
 
-### Maintenance
+2. **Disaster Recovery**
+   - Document recovery procedures
+   - Test recovery process regularly
+   - Maintain redundant copies of address pools
 
-- Create admin tools for address pool management
-- Implement monitoring for low address availability
-- Document procedures for adding new addresses
+## Maintenance and Scaling
+
+### Routine Maintenance
+
+1. **Address Pool Management**
+   - Monitor address availability
+   - Add new addresses when pool decreases below threshold
+   - Implement alerts for low address counts
+
+2. **Log Rotation**
+   - Implement log rotation for error logs
+   - Archive and compress old logs
+   - Maintain privacy by removing sensitive information
+
+3. **Security Updates**
+   - Keep PHP and server software updated
+   - Apply security patches promptly
+   - Review for new vulnerabilities
+
+### Scaling Considerations
+
+1. **Vertical Scaling**
+   - Upgrade server resources as needed
+   - Optimize PHP and server configuration
+   - Improve file system performance
+
+2. **Horizontal Scaling**
+   - Consider load balancing for high traffic
+   - Implement shared storage for multiple servers
+   - Use distributed file locking if needed
+
+3. **Address Pool Scaling**
+   - Implement automatic address generation
+   - Create system for address verification
+   - Develop procedures for address rotation
+
+## Troubleshooting
+
+### Common Issues and Solutions
+
+1. **File Permission Problems**
+   - Symptom: Unable to read/write files
+   - Solution: Verify correct ownership and permissions
+   - Prevention: Document proper permission settings
+
+2. **Race Condition Issues**
+   - Symptom: Corrupt data or missing records
+   - Solution: Ensure proper file locking implementation
+   - Prevention: Test with concurrent access simulation
+
+3. **Rate Limiting Too Restrictive**
+   - Symptom: Legitimate users blocked
+   - Solution: Adjust rate limit parameters
+   - Prevention: Monitor and fine-tune based on usage patterns
+
+### Debugging Tools
+
+1. **Error Logging**
+   - Configure detailed error logging (for development)
+   - Implement structured logging
+   - Create log analyzer tools
+
+2. **Transaction Monitoring**
+   - Create admin view for transaction flow
+   - Implement system to track address usage
+   - Monitor file system operations
+
+3. **User Feedback Collection**
+   - Provide contact method for issues
+   - Collect anonymous feedback
+   - Review and address common problems
 
 ## Conclusion
 
-This PHP implementation provides a complete, secure, and privacy-focused cryptocurrency service platform that matches the functionality of the React version. By following this guide, you can successfully convert the application while maintaining the same user experience and security standards.
+This comprehensive PHP conversion guide provides a complete roadmap for transforming the React application into a robust PHP implementation. By following this guide, developers can create a fully-functional anonymous cryptocurrency service that maintains the same user experience and security features while using simple text files for data storage.
 
-Remember to thoroughly test all aspects of the implementation before deployment to ensure reliability and security.
+The implementation prioritizes:
+- User privacy and anonymity
+- Secure file handling
+- Responsive user interface
+- Proper error handling
+- Maintainable code structure
 
+When fully implemented, the system will provide a seamless experience across all devices while maintaining the highest standards of privacy and security that cryptocurrency users expect.
