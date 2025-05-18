@@ -5,15 +5,24 @@ import { getAddress, recordOrder } from "./fileSystemService";
 // Function to format currency amounts
 export const formatCurrencyAmount = (amount: number | string | any, currency: string): string => {
   // Ensure amount is a number
-  const numericAmount = typeof amount === 'number' ? 
-    amount : 
-    (typeof amount === 'string' ? parseFloat(amount) : 0);
-  
-  // Check if numericAmount is a valid number
-  if (isNaN(numericAmount)) {
+  if (amount === undefined || amount === null) {
     return '0';
   }
   
+  let numericAmount: number;
+  
+  if (typeof amount === 'number') {
+    numericAmount = amount;
+  } else if (typeof amount === 'string') {
+    numericAmount = parseFloat(amount);
+    if (isNaN(numericAmount)) {
+      return '0';
+    }
+  } else {
+    return '0';
+  }
+  
+  // Format based on currency type
   if (currency === 'btc') {
     return numericAmount.toFixed(8);
   } else if (currency === 'eth' || currency === 'xmr') {

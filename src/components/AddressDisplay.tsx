@@ -72,15 +72,28 @@ const AddressDisplay = ({
     );
   };
 
-  const formatAmount = (amount?: number, currencyType: string = currency): string => {
-    if (amount === undefined) return '';
+  const formatAmount = (amount?: number | string | any, currencyType: string = currency): string => {
+    // First, ensure amount is a number
+    if (amount === undefined || amount === null) return '';
     
-    if (currencyType === 'btc') {
-      return amount.toFixed(8);
-    } else if (currencyType === 'eth' || currencyType === 'xmr') {
-      return amount.toFixed(6);
+    let numericAmount: number;
+    
+    if (typeof amount === 'number') {
+      numericAmount = amount;
+    } else if (typeof amount === 'string') {
+      numericAmount = parseFloat(amount);
+      if (isNaN(numericAmount)) return '0';
     } else {
-      return amount.toFixed(2);
+      return '0';
+    }
+    
+    // Now apply proper decimal places based on currency
+    if (currencyType === 'btc') {
+      return numericAmount.toFixed(8);
+    } else if (currencyType === 'eth' || currencyType === 'xmr') {
+      return numericAmount.toFixed(6);
+    } else {
+      return numericAmount.toFixed(2);
     }
   };
 
