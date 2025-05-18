@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -118,14 +119,20 @@ const Swap = () => {
       return;
     }
 
-    // Show error if the same currency is selected
+    // Show warning if the same currency is selected
     if (data.fromCurrency === data.toCurrency) {
+      const proceedAnyway = window.confirm(
+        "You're trying to swap the same currency. This may incur unnecessary fees. Do you want to proceed anyway? (Consider using our Mixer service for better privacy and lower fees.)"
+      );
+      
+      if (!proceedAnyway) {
+        return;
+      }
+      
       toast({
-        title: "Same currency selected",
-        description: "You're trying to swap the same currency. Consider using our Mixer service for better privacy.",
-        variant: "destructive",
+        title: "Same currency swap",
+        description: "Proceeding with same currency swap as requested.",
       });
-      // Continue processing but with a warning
     }
 
     setProcessingSubmit(true);
@@ -387,7 +394,11 @@ const Swap = () => {
             )}
 
             <div className="flex justify-end">
-              <Button type="submit" disabled={processingSubmit || (watchReceivingAddress && !addressValid)}>
+              <Button 
+                type="submit" 
+                disabled={processingSubmit || (watchReceivingAddress && !addressValid)}
+                className={watchFromCurrency === watchToCurrency ? "bg-amber-500 hover:bg-amber-600" : ""}
+              >
                 {processingSubmit ? "Processing..." : "Continue to Swap"}
               </Button>
             </div>
